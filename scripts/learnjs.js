@@ -5,10 +5,10 @@ require("dotenv").config();
 async function main() {
   console.log("START:");
   const provider = new ethers.providers.JsonRpcProvider(
-    "https://eth-goerli.g.alchemy.com/v2/83yL2qXH68vnTkzzida15zCVNGZCy1JO"
+    process.env.ALCHEMY_GOERLI_URL
   );
 
-  const wallet = new ethers.Wallet(process.env.PRIVATEKEY, provider);
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   // 部署合约
   //const contractFactory = new ethers.ContractFactory(abi, bytescode, wallet);
   const etherbalance = await wallet.getBalance();

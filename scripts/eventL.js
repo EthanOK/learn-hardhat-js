@@ -1,7 +1,8 @@
 const { ethers } = require("hardhat");
 // or const ethers = require("ethers");
-var mysql = require("mysql");
+const mysql = require("mysql");
 
+// create mysql connection
 var connection = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -12,7 +13,7 @@ var connection = mysql.createConnection({
 
 async function main() {
   const provider = new ethers.providers.JsonRpcProvider(
-    "https://eth-goerli.g.alchemy.com/v2/83yL2qXH68vnTkzzida15zCVNGZCy1JO"
+    process.env.ALCHEMY_GOERLI_URL
   );
 
   // 交互合约 new ethers.Contract(addressOrName, abi, providerOrSigner);
@@ -250,3 +251,5 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+// node scripts/eventL.js
