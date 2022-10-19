@@ -252,4 +252,4 @@ main().catch((error) => {
   process.exitCode = 1;
 });
 
-// node scripts/eventL.js
+// node scripts/eventlog.js

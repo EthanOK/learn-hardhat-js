@@ -14,6 +14,7 @@ async function main() {
   const lockedAmount = hre.ethers.utils.parseEther("1");
 
   const Lock = await hre.ethers.getContractFactory("Lock");
+  console.log(`Deploying... `);
   const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
 
   await lock.deployed();
@@ -29,3 +30,5 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+// npx hardhat run scripts/deploy.js --network tbsc

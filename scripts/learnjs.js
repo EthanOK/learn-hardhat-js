@@ -212,7 +212,9 @@ async function main() {
       type: "function",
     },
   ];
+
   const contract = new ethers.Contract(addressC, abi, wallet);
+  // or const contract = new ethers.Contract(addressC, abi, provider);
   // let contractWithSigner = contract.connect(wallet);
   let name = await contract.name();
   console.log(name);
