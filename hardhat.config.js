@@ -1,11 +1,20 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 require("@nomiclabs/hardhat-etherscan");
+require("hardhat-gas-reporter");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   defaultNetwork: "hardhat",
-  solidity: "0.8.17",
+  solidity: {
+    version: "0.8.17",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   networks: {
     goerli: {
       url: process.env.ALCHEMY_GOERLI_URL,
@@ -22,4 +31,21 @@ module.exports = {
     // BSC_API_KEY ETHERSCAN_API_KEY
     apiKey: process.env.BSC_API_KEY,
   },
+  gasReporter: {
+    enabled: true,
+  },
 };
+
+task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
+  const accounts = await hre.ethers.getSigners();
+  for (const account of accounts) {
+    console.log(account.address);
+  }
+});
+
+task("blocknumber", "Prints the current block number").setAction(
+  async (taskArgs, hre) => {
+    const number = await hre.ethers.provider.getBlockNumber();
+    console.log(`The current block number: ${number}`);
+  }
+);

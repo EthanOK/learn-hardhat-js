@@ -13,4 +13,5 @@ npx hardhat run scripts/deploy.js
 npx hardhat compile
 npx hardhat clean
 npx hardhat verify --network goerli `contractAddress` `args`
+npx hardhat blocknumber --network goerli
 ```
