@@ -14,4 +14,5 @@ npx hardhat compile
 npx hardhat clean
 npx hardhat verify --network goerli `contractAddress` `args`
 npx hardhat blocknumber --network goerli
+npx hardhat flatten ./contracts/YGToken.sol > ./flattens/flattenedYGToken.sol
 ```
