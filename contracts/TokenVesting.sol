@@ -17,6 +17,7 @@ contract Colorbay is ERC20 {
     }
 }
 
+// Release its token balance
 contract TokenVesting is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for Colorbay;
