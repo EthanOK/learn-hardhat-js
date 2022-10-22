@@ -121,7 +121,7 @@ contract YGToken is ERC20, Ownable {
         }
     }
 
-    //  get released transfer out amount
+    // get released transfer out amount
     function getReleasedAmount(uint256 _index) external view returns (uint256) {
         require(_index == 0 || _index == 1, "index is wrong");
         if (_index == 0) {
