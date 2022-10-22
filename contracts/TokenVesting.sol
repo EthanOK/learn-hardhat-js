@@ -13,11 +13,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  */
 contract Colorbay is ERC20 {
     constructor() ERC20("YGToken", "YGT") {
-        _mint(msg.sender, 1_000_000_000 * 1e18);
+        _mint(msg.sender, 1_000_000 * 1e18);
     }
 }
 
-// Release its token balance
 contract TokenVesting is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for Colorbay;
