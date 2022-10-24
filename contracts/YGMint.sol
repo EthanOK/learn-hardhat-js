@@ -238,6 +238,7 @@ contract YGMint is ERC721URIStorage {
         address payable secondRecommender = recommender[firstRecommender];
         if (zero != secondRecommender && isMint[secondRecommender]) {
             secondRecommender.transfer(secondtLeave * count);
+        }
     }
 
     modifier checkRecommender(address payable _recommender) {
