@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract YGToken is ERC20, Ownable {
+contract YGTokenLock is ERC20, Ownable {
     // todo total
     uint256 private constant total = 1_000_000_000 * 1e18;
     // todo mint rate
