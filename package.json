@@ -8,7 +8,8 @@
     "compile": "npx hardhat compile",
     "node": "npx hardhat node",
     "clean": "npx hardhat clean",
-    "help": "npx hardhat help"
+    "help": "npx hardhat help",
+    "deploy": "npx hardhat deploy"
   },
   "author": "ethan",
   "license": "ISC",
@@ -17,9 +18,11 @@
     "@nomiclabs/hardhat-etherscan": "^3.1.1",
     "hardhat": "^2.12.0",
     "hardhat-contract-sizer": "^2.6.1",
+    "hardhat-deploy": "^0.11.18",
     "hardhat-gas-reporter": "^1.0.9"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.5.1",
     "@openzeppelin/contracts": "^4.7.3",
     "dotenv": "^16.0.3",
     "mysql": "^2.18.1"
