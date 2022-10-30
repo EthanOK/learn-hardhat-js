@@ -15,10 +15,10 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   console.log(`chainId: ${chainId}`);
 
   // https://github.com/wighawag/hardhat-deploy#deploymentsdeployname-options
-  const contract = await deploy("Storage", {
-    from: deployer,
-    args: [100],
-  });
+  // const contract = await deploy("ERC721Basic", {
+  //   from: deployer,
+  //   args: ["Block Chain", "BC"],
+  // });
 
-  console.log(contract.address);
+  // console.log(contract.address);
 };
