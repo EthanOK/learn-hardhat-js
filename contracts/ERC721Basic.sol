@@ -19,7 +19,13 @@ contract ERC721Basic is ERC721, AccessControl {
         override(ERC721, AccessControl)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return
+            super.supportsInterface(interfaceId) ||
+            interfaceId ==
+            this.balanceOf.selector ^
+                this.ownerOf.selector ^
+                this.getApproved.selector ^
+                this.isApprovedForAll.selector;
     }
 
     function mint(address account, uint256 tokenId)
