@@ -1,17 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
-
-interface IERC721Enumerable {
-    function totalSupply() external view returns (uint256);
-
-    function tokenOfOwnerByIndex(address owner, uint256 index)
-        external
-        view
-        returns (uint256);
-
-    function tokenByIndex(uint256 index) external view returns (uint256);
-}
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract NFTUtils {
     function tokenURI(address contactAddr, uint256 tokenId)
@@ -116,8 +107,38 @@ contract NFTUtils {
     modifier OnlyTotalSupply(address contactAddr) {
         require(
             IERC721Enumerable(contactAddr).totalSupply() > 0,
-            "totalSupply = 0!"
+            "TotalSupply Zero."
         );
         _;
+    }
+
+    // ERC20 totalSupply
+    function totalSupplyERC20(address erc20Contract)
+        external
+        view
+        returns (uint256)
+    {
+        IERC20 erc20 = IERC20(erc20Contract);
+        return erc20.totalSupply();
+    }
+
+    // ERC20 balanceOf
+    function balanceOfERC20(address erc20Contract, address account)
+        external
+        view
+        returns (uint256)
+    {
+        IERC20 erc20 = IERC20(erc20Contract);
+        return erc20.balanceOf(account);
+    }
+
+    // ERC20 allowance
+    function allowanceERC20(
+        address erc20Contract,
+        address owner,
+        address spender
+    ) external view returns (uint256) {
+        IERC20 erc20 = IERC20(erc20Contract);
+        return erc20.allowance(owner, spender);
     }
 }
