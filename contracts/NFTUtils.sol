@@ -80,36 +80,33 @@ contract NFTUtils {
         return erc721.supportsInterface(interfaceId);
     }
 
+    // totalSupply [return uint256 or error]
     function totalSupply(address contactAddr) external view returns (uint256) {
         IERC721Enumerable erc721 = IERC721Enumerable(contactAddr);
+        // function totalSupply() exist?
         return erc721.totalSupply();
     }
 
+    // tokenOfOwnerByIndex [return uint256 or error]
     function tokenOfOwnerByIndex(
         address contactAddr,
         address owner,
         uint256 index
-    ) external view OnlyTotalSupply(contactAddr) returns (uint256) {
+    ) external view returns (uint256) {
         IERC721Enumerable erc721 = IERC721Enumerable(contactAddr);
+        // function tokenOfOwnerByIndex() exist?
         return erc721.tokenOfOwnerByIndex(owner, index);
     }
 
+    // tokenByIndex [return uint256 or error]
     function tokenByIndex(address contactAddr, uint256 index)
         external
         view
-        OnlyTotalSupply(contactAddr)
         returns (uint256)
     {
         IERC721Enumerable erc721 = IERC721Enumerable(contactAddr);
+        // function tokenByIndex() exist?
         return erc721.tokenByIndex(index);
-    }
-
-    modifier OnlyTotalSupply(address contactAddr) {
-        require(
-            IERC721Enumerable(contactAddr).totalSupply() > 0,
-            "TotalSupply Zero."
-        );
-        _;
     }
 
     // ERC20 totalSupply
