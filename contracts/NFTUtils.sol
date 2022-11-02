@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract NFTUtils {
     function tokenURI(address contactAddr, uint256 tokenId)
@@ -70,15 +70,14 @@ contract NFTUtils {
         return erc721.isApprovedForAll(owner, operator);
     }
 
-    //
-    function supportsInterface(address contactAddr, bytes4 interfaceId)
-        external
-        view
-        returns (bool)
-    {
-        IERC721Metadata erc721 = IERC721Metadata(contactAddr);
-        return erc721.supportsInterface(interfaceId);
-    }
+    // function supportsInterface(address contactAddr, bytes4 interfaceId)
+    //     external
+    //     view
+    //     returns (bool)
+    // {
+    //     IERC721Metadata erc721 = IERC721Metadata(contactAddr);
+    //     return erc721.supportsInterface(interfaceId);
+    // }
 
     // totalSupply [return uint256 or error]
     function totalSupply(address contactAddr) external view returns (uint256) {
@@ -115,7 +114,7 @@ contract NFTUtils {
         view
         returns (uint256)
     {
-        IERC20 erc20 = IERC20(erc20Contract);
+        IERC20Metadata erc20 = IERC20Metadata(erc20Contract);
         return erc20.totalSupply();
     }
 
@@ -125,7 +124,7 @@ contract NFTUtils {
         view
         returns (uint256)
     {
-        IERC20 erc20 = IERC20(erc20Contract);
+        IERC20Metadata erc20 = IERC20Metadata(erc20Contract);
         return erc20.balanceOf(account);
     }
 
@@ -135,7 +134,21 @@ contract NFTUtils {
         address owner,
         address spender
     ) external view returns (uint256) {
-        IERC20 erc20 = IERC20(erc20Contract);
+        IERC20Metadata erc20 = IERC20Metadata(erc20Contract);
         return erc20.allowance(owner, spender);
+    }
+
+    // ERC20 name symbol decimals
+    function nameSyDecERC20(address erc20Contract)
+        external
+        view
+        returns (
+            string memory name,
+            string memory symbol,
+            uint8 decimals
+        )
+    {
+        IERC20Metadata erc20 = IERC20Metadata(erc20Contract);
+        return (erc20.name(), erc20.symbol(), erc20.decimals());
     }
 }
