@@ -25,10 +25,11 @@ contract ERC721AQueryableTest is ERC721AQueryable {
     }
 
     // override tokenURI
+    // Should delect (ERC721A, IERC721A)
     function tokenURI(uint256 tokenId)
         public
         view
-        override
+        override(ERC721A, IERC721A)
         returns (string memory)
     {
         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();

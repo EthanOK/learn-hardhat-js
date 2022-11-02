@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npx hardhat test test/testdeploy.js",
+    "test": "npx hardhat test",
+    "fundme_test": "npx hardhat test test/fundme_test.js",
     "compile": "npx hardhat compile",
     "size-contracts": "npx hardhat size-contracts",
     "node": "npx hardhat node",
