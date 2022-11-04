@@ -21,12 +21,12 @@ module.exports = {
     goerli: {
       url: process.env.ALCHEMY_GOERLI_URL,
       chainId: 5,
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: [process.env.PRIVATE_KEY, process.env.PRIVATE_KEY2],
     },
     tbsc: {
       url: process.env.TBSC_URL,
       chainId: 97,
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: [process.env.PRIVATE_KEY, process.env.PRIVATE_KEY2],
     },
   },
   etherscan: {
