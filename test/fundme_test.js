@@ -129,6 +129,14 @@ describe("FundMe", function () {
         ).to.be.equal(0);
       }
     });
+
+    it("Only allows the owner to withdraw us", async function () {
+      const { owner, fundme, otherAccount } = await loadFixture(
+        deployOneYearLockFixture
+      );
+      const fundmeOther = fundme.connect(otherAccount);
+      await expect(fundmeOther.withdraw()).to.be.reverted;
+    });
   });
 });
 
