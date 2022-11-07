@@ -3,8 +3,86 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-contract NFTUtils {
+contract WhiteList {
+    struct Data {
+        // Whitelist MerkleRoot
+        bytes32 merkleRoot;
+        // Whitelist Source Account
+        address sourceAccount;
+    }
+    // white list merkle Roots
+    // contactAddr => issueId => Date
+    mapping(address => mapping(uint256 => Data)) whiteLists;
+
+    // account Claimed State
+    // keccak256(contactAddr,issueId,account) => state
+    mapping(bytes32 => bool) accountStates;
+
+    event ClaimedERC20(
+        address indexed contactAddr,
+        uint256 indexed issueId,
+        address indexed account,
+        uint256 amount
+    );
+    event ClaimedERC721(
+        address indexed contactAddr,
+        uint256 indexed issueId,
+        address indexed account,
+        uint256 tokenId
+    );
+
+    function claimERC20(
+        address contactAddr,
+        uint256 issueId,
+        address account,
+        uint256 amount,
+        bytes32[] calldata merkleProof
+    ) external returns (bool) {
+        // Verify account Claimed State
+        bytes32 stateId = keccak256(
+            abi.encodePacked(contactAddr, issueId, account)
+        );
+        require(
+            !accountStates[stateId],
+            "This account has been claimed in this issue"
+        );
+
+        // Verify the merkle proof
+        bytes32 node = keccak256(abi.encodePacked(account, amount));
+
+        bytes32 merkleRoot = whiteLists[contactAddr][issueId].merkleRoot;
+        require(
+            MerkleProof.verify(merkleProof, merkleRoot, node),
+            "Merkle: Invalid proof."
+        );
+
+        IERC20Metadata erc20 = IERC20Metadata(contactAddr);
+        address source = whiteLists[contactAddr][issueId].sourceAccount;
+
+        // Necessary condition: sourceAccount approve this.address
+        erc20.transferFrom(source, account, amount);
+        // Change state
+        accountStates[stateId] = true;
+
+        emit ClaimedERC20(contactAddr, issueId, account, amount);
+        return true;
+    }
+
+    function getAccountClaimedState(
+        address contactAddr,
+        uint256 issueId,
+        address account
+    ) external view returns (bool) {
+        bytes32 stateId = keccak256(
+            abi.encodePacked(contactAddr, issueId, account)
+        );
+        return accountStates[stateId];
+    }
+}
+
+contract NFTUtils is WhiteList {
     function tokenURI(address contactAddr, uint256 tokenId)
         external
         view
