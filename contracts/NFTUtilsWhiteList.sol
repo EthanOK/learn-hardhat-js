@@ -55,7 +55,7 @@ contract WhiteList {
         bytes32 merkleRoot = whiteLists[contactAddr][issueId].merkleRoot;
         require(
             MerkleProof.verify(merkleProof, merkleRoot, node),
-            "Merkle: Invalid proof."
+            "Invalid proof"
         );
 
         IERC20Metadata erc20 = IERC20Metadata(contactAddr);
