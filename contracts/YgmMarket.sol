@@ -116,6 +116,7 @@ contract YgmMarket is Ownable {
         );
     }
 
+    // _contract tokenId price
     function shelves(
         address _contract,
         uint256 tokenId,
