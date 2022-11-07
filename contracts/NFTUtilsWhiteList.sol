@@ -44,10 +44,7 @@ contract WhiteList {
         bytes32 stateId = keccak256(
             abi.encodePacked(contactAddr, issueId, account)
         );
-        require(
-            !accountStates[stateId],
-            "This account has been claimed in this issue"
-        );
+        require(!accountStates[stateId], "Account has been claimed");
 
         // Verify the merkle proof
         bytes32 node = keccak256(abi.encodePacked(account, amount));
