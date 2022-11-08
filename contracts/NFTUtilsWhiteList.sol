@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract WhiteList is ReentrancyGuard, AccessControl {
+abstract contract WhiteList is ReentrancyGuard, AccessControl {
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
     struct Data {
         // Whitelist MerkleRoot
@@ -28,6 +28,12 @@ contract WhiteList is ReentrancyGuard, AccessControl {
         _setupRole(OWNER_ROLE, msg.sender);
     }
 
+    event SetWhiteLists(
+        address indexed contactAddr,
+        uint256 indexed issueId,
+        bytes32 indexed merkleRoot,
+        address sourceAccount
+    );
     event ClaimedERC20(
         address indexed contactAddr,
         uint256 indexed issueId,
@@ -41,6 +47,18 @@ contract WhiteList is ReentrancyGuard, AccessControl {
         uint256 tokenId
     );
 
+    function setWhiteLists(
+        address contactAddr,
+        uint256 issueId,
+        bytes32 merkleRoot,
+        address sourceAccount
+    ) external onlyRole(OWNER_ROLE) returns (bool) {
+        whiteLists[contactAddr][issueId].merkleRoot = merkleRoot;
+        whiteLists[contactAddr][issueId].sourceAccount = sourceAccount;
+        emit SetWhiteLists(contactAddr, issueId, merkleRoot, sourceAccount);
+        return true;
+    }
+
     function claimERC20(
         address contactAddr,
         uint256 issueId,
@@ -48,7 +66,7 @@ contract WhiteList is ReentrancyGuard, AccessControl {
         uint256 amount,
         bytes32[] calldata merkleProof
     ) external nonReentrant returns (bool) {
-        // Verify account Claimed State
+        // Verify account claimed State
         bytes32 stateId = keccak256(
             abi.encodePacked(contactAddr, issueId, account)
         );
@@ -82,7 +100,7 @@ contract WhiteList is ReentrancyGuard, AccessControl {
         uint256 tokenId,
         bytes32[] calldata merkleProof
     ) external nonReentrant returns (bool) {
-        // Verify account Claimed State
+        // Verify account claimed State
         bytes32 stateId = keccak256(
             abi.encodePacked(contactAddr, issueId, account)
         );
@@ -121,7 +139,16 @@ contract WhiteList is ReentrancyGuard, AccessControl {
     }
 }
 
-contract NFTUtils is WhiteList {
+abstract contract QueryNFTData {
+    function supportsInterface(address contactAddr, bytes4 interfaceId)
+        external
+        view
+        returns (bool)
+    {
+        IERC165 erc165 = IERC165(contactAddr);
+        return erc165.supportsInterface(interfaceId);
+    }
+
     function tokenURI(address contactAddr, uint256 tokenId)
         external
         view
@@ -215,7 +242,9 @@ contract NFTUtils is WhiteList {
         // function tokenByIndex() exist?
         return erc721.tokenByIndex(index);
     }
+}
 
+abstract contract QueryERC20Data {
     // ERC20 totalSupply
     function totalSupplyERC20(address erc20Contract)
         external
@@ -260,3 +289,5 @@ contract NFTUtils is WhiteList {
         return (erc20.name(), erc20.symbol(), erc20.decimals());
     }
 }
+
+contract NFTUtils is QueryNFTData, QueryERC20Data, WhiteList {}

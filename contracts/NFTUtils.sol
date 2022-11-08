@@ -5,6 +5,15 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract NFTUtils {
+    function supportsInterface(address contactAddr, bytes4 interfaceId)
+        external
+        view
+        returns (bool)
+    {
+        IERC165 erc165 = IERC165(contactAddr);
+        return erc165.supportsInterface(interfaceId);
+    }
+
     function tokenURI(address contactAddr, uint256 tokenId)
         external
         view
