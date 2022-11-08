@@ -15,7 +15,7 @@ contract YgmMarket is Ownable {
     mapping(address => uint256) public businessFee;
     mapping(address => address) public businessAddress;
     mapping(address => address) public payContract;
-
+    //token sell price
     mapping(address => mapping(uint256 => uint256)) tokenAmount;
 
     mapping(address => mapping(uint256 => bool)) isLock;
