@@ -135,16 +135,16 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         uint256 total_account,
         uint256 timestamp
     ) internal pure returns (bytes32) {
-        bytes32 _hashdata = keccak256(
-            abi.encodePacked(
-                contactAddr,
-                account,
-                amount,
-                total_account,
-                timestamp
-            )
-        );
-        return _hashdata.toEthSignedMessageHash();
+        return
+            keccak256(
+                abi.encodePacked(
+                    contactAddr,
+                    account,
+                    amount,
+                    total_account,
+                    timestamp
+                )
+            ).toEthSignedMessageHash();
     }
 }
 
