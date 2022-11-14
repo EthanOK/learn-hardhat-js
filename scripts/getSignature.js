@@ -6,8 +6,8 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
 // https://learnblockchain.cn/docs/ethers.js/api-wallet.html#id14
 // https://learnblockchain.cn/docs/ethers.js/api-utils.html#solidity
 // keccak256(abi.encodePacked(a, b)) == utils.solidityKeccak256(types, values)
-let tokenId = 10;
-let account = "0x6278a1e803a76796a3a1f7f6344fe874ebfe94b2";
+let tokenId = 1;
+let account = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4";
 let message = ethers.utils.solidityKeccak256(
   ["uint256", "address"],
   [tokenId, account]

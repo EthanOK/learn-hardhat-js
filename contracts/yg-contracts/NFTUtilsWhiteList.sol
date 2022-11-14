@@ -1,27 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-abstract contract WhiteListMerkle is ReentrancyGuard, AccessControl {
+// WhiteList: Off-chain signature on-chain verification
+abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
+    using ECDSA for bytes32;
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
-    struct Data {
-        // Whitelist MerkleRoot
-        bytes32 merkleRoot;
+    struct ContactData {
+        // Whitelist verifier
+        address verifier;
         // Whitelist Source Account
         address sourceAccount;
     }
-    // white list merkle Roots
-    // contactAddr => issueId => Data
-    mapping(address => mapping(uint256 => Data)) whiteLists;
-
-    // account Claimed State
-    // keccak256(contactAddr,issueId,account) => state
-    mapping(bytes32 => bool) accountStates;
+    // contactAddr => Data
+    mapping(address => ContactData) public contactDatas;
+    mapping(address => mapping(address => uint256)) public erc20_balanceOf;
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -36,7 +35,6 @@ abstract contract WhiteListMerkle is ReentrancyGuard, AccessControl {
     );
     event ClaimedERC20(
         address indexed contactAddr,
-        uint256 indexed issueId,
         address indexed account,
         uint256 amount
     );
@@ -47,95 +45,106 @@ abstract contract WhiteListMerkle is ReentrancyGuard, AccessControl {
         uint256 tokenId
     );
 
-    function setWhiteLists(
-        address contactAddr,
-        uint256 issueId,
-        bytes32 merkleRoot,
-        address sourceAccount
-    ) external onlyRole(OWNER_ROLE) returns (bool) {
-        whiteLists[contactAddr][issueId].merkleRoot = merkleRoot;
-        whiteLists[contactAddr][issueId].sourceAccount = sourceAccount;
-        emit SetWhiteLists(contactAddr, issueId, merkleRoot, sourceAccount);
-        return true;
-    }
+    // function setWhiteLists(
+    //     address contactAddr,
+    //     uint256 issueId,
+    //     bytes32 merkleRoot,
+    //     address sourceAccount
+    // ) external onlyRole(OWNER_ROLE) returns (bool) {
+    //     return true;
+    // }
 
     function claimERC20(
         address contactAddr,
-        uint256 issueId,
         address account,
         uint256 amount,
-        bytes32[] calldata merkleProof
-    ) external nonReentrant returns (bool) {
-        // Verify account claimed State
-        bytes32 stateId = keccak256(
-            abi.encodePacked(contactAddr, issueId, account)
-        );
-        require(!accountStates[stateId], "Account has been claimed");
-
-        // Verify the merkle proof
-        bytes32 node = keccak256(abi.encodePacked(account, amount));
-
-        bytes32 merkleRoot = whiteLists[contactAddr][issueId].merkleRoot;
+        uint256 total_account,
+        uint256 timestamp,
+        bytes calldata signature
+    ) external whenNotPaused nonReentrant returns (bool) {
+        // expirationTime  180s
         require(
-            MerkleProof.verify(merkleProof, merkleRoot, node),
-            "Invalid proof"
+            timestamp + 180 >= block.timestamp && block.timestamp >= timestamp,
+            "expiration time"
+        );
+        require(
+            amount + erc20_balanceOf[contactAddr][account] <= total_account,
+            "Insufficient available balance"
         );
 
+        // Verify account claimed
+        bytes32 hashdata = _hash(
+            contactAddr,
+            account,
+            amount,
+            total_account,
+            timestamp
+        );
+        _verify(contactAddr, hashdata, signature);
+
+        // add erc20_balanceOf
+        erc20_balanceOf[contactAddr][account] += amount;
+
+        // Transfer condition: sourceAccount approve this.addres
         IERC20Metadata erc20 = IERC20Metadata(contactAddr);
-        address source = whiteLists[contactAddr][issueId].sourceAccount;
-
-        // Necessary condition: sourceAccount approve this.address
-        erc20.transferFrom(source, account, amount);
-        // Change state
-        accountStates[stateId] = true;
-
-        emit ClaimedERC20(contactAddr, issueId, account, amount);
+        erc20.transferFrom(
+            contactDatas[contactAddr].sourceAccount,
+            account,
+            amount
+        );
+        emit ClaimedERC20(contactAddr, account, amount);
         return true;
     }
 
-    function claimERC721(
+    // function claimERC721(
+    //     address contactAddr,
+    //     uint256 issueId,
+    //     address account,
+    //     uint256 tokenId,
+    //     bytes32[] calldata merkleProof
+    // ) external nonReentrant returns (bool) {
+    //     // Verify account claimed State
+
+    //     return true;
+    // }
+
+    // function getAccountClaimedState(
+    //     address contactAddr,
+    //     uint256 issueId,
+    //     address account
+    // ) external view returns (bool) {
+
+    // }
+
+    function _verify(
         address contactAddr,
-        uint256 issueId,
-        address account,
-        uint256 tokenId,
-        bytes32[] calldata merkleProof
-    ) external nonReentrant returns (bool) {
-        // Verify account claimed State
-        bytes32 stateId = keccak256(
-            abi.encodePacked(contactAddr, issueId, account)
-        );
-        require(!accountStates[stateId], "Account has been claimed");
-
-        // Verify the merkle proof
-        bytes32 node = keccak256(abi.encodePacked(account, tokenId));
-
-        bytes32 merkleRoot = whiteLists[contactAddr][issueId].merkleRoot;
+        bytes32 hashdata,
+        bytes calldata signature
+    ) internal view returns (bool) {
         require(
-            MerkleProof.verify(merkleProof, merkleRoot, node),
-            "Invalid proof"
+            contactDatas[contactAddr].verifier == hashdata.recover(signature),
+            "The signer is not the verifier"
         );
-
-        IERC721Metadata erc721 = IERC721Metadata(contactAddr);
-        address source = whiteLists[contactAddr][issueId].sourceAccount;
-
-        // Necessary condition: sourceAccount setApprovalForAll this.address
-        erc721.safeTransferFrom(source, account, tokenId);
-        // Change state
-        accountStates[stateId] = true;
-
-        emit ClaimedERC721(contactAddr, issueId, account, tokenId);
         return true;
     }
 
-    function getAccountClaimedState(
+    function _hash(
         address contactAddr,
-        uint256 issueId,
-        address account
-    ) external view returns (bool) {
-        bytes32 stateId = keccak256(
-            abi.encodePacked(contactAddr, issueId, account)
+        address account,
+        uint256 amount,
+        uint256 total_account,
+        uint256 timestamp
+    ) internal pure returns (bytes32) {
+        bytes32 _hashdata = keccak256(
+            abi.encodePacked(
+                contactAddr,
+                account,
+                amount,
+                total_account,
+                timestamp
+            )
         );
-        return accountStates[stateId];
+        return _hashdata.toEthSignedMessageHash();
     }
 }
 
@@ -290,4 +299,4 @@ abstract contract QueryERC20Data {
     }
 }
 
-contract NFTUtils is QueryNFTData, QueryERC20Data, WhiteListMerkle {}
+contract NFTUtils is QueryNFTData, QueryERC20Data, WhiteList {}

@@ -48,7 +48,7 @@ contract ERC721LazyMint is ERC721, AccessControl {
             );
     }
 
-    function _verify(bytes32 digest, bytes memory signature)
+    function _verify(bytes32 digest, bytes calldata signature)
         internal
         view
         returns (bool)
