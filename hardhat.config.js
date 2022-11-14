@@ -4,7 +4,7 @@ require("@nomiclabs/hardhat-etherscan");
 require("hardhat-gas-reporter");
 require("hardhat-contract-sizer");
 require("hardhat-deploy");
-require('@openzeppelin/hardhat-upgrades');
+require("@openzeppelin/hardhat-upgrades");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -47,7 +47,8 @@ module.exports = {
   namedAccounts: {
     deployer: {
       default: 0, // here this will by default take the first account as deployer
-      1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
+      tbsc: 0,
+      1: 0, // mainnet
       goerli: 0, //it can also specify a specific netwotk name (specified in hardhat.config.js)
     },
   },

@@ -68,8 +68,10 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
             timestamp + 180 >= block.timestamp && block.timestamp >= timestamp,
             "expiration time"
         );
+
         require(
-            amount + erc20_balanceOf[contactAddr][account] <= total_account,
+            amount > 0 &&
+                amount + erc20_balanceOf[contactAddr][account] <= total_account,
             "Insufficient available balance"
         );
 
@@ -138,7 +140,7 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
     ) internal view returns (bool) {
         require(
             contractDatas[contactAddr].verifier == hashdata.recover(signature),
-            "The signer is not the verifier"
+            "Invalid signature"
         );
         return true;
     }
