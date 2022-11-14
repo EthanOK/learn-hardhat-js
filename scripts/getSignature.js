@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 
-const wallet = new ethers.Wallet(process.env.PRIVATE_KEY);
+const signer = new ethers.Wallet(process.env.PRIVATE_KEY);
 
 // 签名二进制信息
 // https://learnblockchain.cn/docs/ethers.js/api-wallet.html#id14
@@ -15,8 +15,10 @@ let message = ethers.utils.solidityKeccak256(
 console.log(`tokenId: ${tokenId}`);
 console.log(`account: ${account}`);
 console.log("utils.solidityKeccak256(a, b):", message);
+console.log("keccak256(abi.encodePacked(a, b)):", message);
 // console.log(ethers.utils.arrayify(message));
-const signature = wallet.signMessage(ethers.utils.arrayify(message));
+let binaryData = ethers.utils.arrayify(message);
+const signature = signer.signMessage(binaryData);
 
 signature.then((sign) => {
   console.log("signature:", sign);

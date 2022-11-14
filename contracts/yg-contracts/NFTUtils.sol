@@ -12,14 +12,15 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
     using ECDSA for bytes32;
     bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
-    struct ContactData {
+    struct ContractData {
         // Whitelist verifier
         address verifier;
         // Whitelist Source Account
         address sourceAccount;
     }
     // contactAddr => Data
-    mapping(address => ContactData) public contactDatas;
+    mapping(address => ContractData) public contractDatas;
+    // erc20 balanceOf
     mapping(address => mapping(address => uint256)) public erc20_balanceOf;
 
     constructor() {
@@ -27,32 +28,32 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         _setupRole(OWNER_ROLE, msg.sender);
     }
 
-    event SetWhiteLists(
+    event SetContractDatas(
         address indexed contactAddr,
-        uint256 indexed issueId,
-        bytes32 indexed merkleRoot,
-        address sourceAccount
+        address indexed verifier,
+        address indexed sourceAccount
     );
     event ClaimedERC20(
         address indexed contactAddr,
         address indexed account,
-        uint256 amount
+        uint256 indexed amount
     );
     event ClaimedERC721(
         address indexed contactAddr,
-        uint256 indexed issueId,
         address indexed account,
-        uint256 tokenId
+        uint256 indexed tokenId
     );
 
-    // function setWhiteLists(
-    //     address contactAddr,
-    //     uint256 issueId,
-    //     bytes32 merkleRoot,
-    //     address sourceAccount
-    // ) external onlyRole(OWNER_ROLE) returns (bool) {
-    //     return true;
-    // }
+    function setContactDatas(
+        address contactAddr,
+        address verifier,
+        address sourceAccount
+    ) external onlyRole(OWNER_ROLE) returns (bool) {
+        contractDatas[contactAddr].verifier = verifier;
+        contractDatas[contactAddr].sourceAccount = sourceAccount;
+        emit SetContractDatas(contactAddr, verifier, sourceAccount);
+        return true;
+    }
 
     function claimERC20(
         address contactAddr,
@@ -73,13 +74,15 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         );
 
         // Verify account claimed
-        bytes32 hashdata = _hash(
-            contactAddr,
-            account,
-            amount,
-            total_account,
-            timestamp
-        );
+        bytes32 hashdata = keccak256(
+            abi.encodePacked(
+                contactAddr,
+                account,
+                amount,
+                total_account,
+                timestamp
+            )
+        ).toEthSignedMessageHash();
         _verify(contactAddr, hashdata, signature);
 
         // add erc20_balanceOf
@@ -88,7 +91,7 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         // Transfer condition: sourceAccount approve this.addres
         IERC20Metadata erc20 = IERC20Metadata(contactAddr);
         erc20.transferFrom(
-            contactDatas[contactAddr].sourceAccount,
+            contractDatas[contactAddr].sourceAccount,
             account,
             amount
         );
@@ -96,25 +99,37 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         return true;
     }
 
-    // function claimERC721(
-    //     address contactAddr,
-    //     uint256 issueId,
-    //     address account,
-    //     uint256 tokenId,
-    //     bytes32[] calldata merkleProof
-    // ) external nonReentrant returns (bool) {
-    //     // Verify account claimed State
+    function claimERC721(
+        address contactAddr,
+        address account,
+        uint256 tokenId,
+        uint256 timestamp,
+        bytes calldata signature
+    ) external nonReentrant returns (bool) {
+        // expirationTime  180s
+        require(
+            timestamp + 180 >= block.timestamp && block.timestamp >= timestamp,
+            "expiration time"
+        );
 
-    //     return true;
-    // }
+        // Verify account claimed
+        bytes32 hashdata = keccak256(
+            abi.encodePacked(contactAddr, account, tokenId, timestamp)
+        ).toEthSignedMessageHash();
+        _verify(contactAddr, hashdata, signature);
 
-    // function getAccountClaimedState(
-    //     address contactAddr,
-    //     uint256 issueId,
-    //     address account
-    // ) external view returns (bool) {
+        IERC721Metadata erc721 = IERC721Metadata(contactAddr);
 
-    // }
+        // safeTransferFrom condition: sourceAccount setApprovalForAll this.address
+        erc721.safeTransferFrom(
+            contractDatas[contactAddr].sourceAccount,
+            account,
+            tokenId
+        );
+
+        emit ClaimedERC721(contactAddr, account, tokenId);
+        return true;
+    }
 
     function _verify(
         address contactAddr,
@@ -122,29 +137,10 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         bytes calldata signature
     ) internal view returns (bool) {
         require(
-            contactDatas[contactAddr].verifier == hashdata.recover(signature),
+            contractDatas[contactAddr].verifier == hashdata.recover(signature),
             "The signer is not the verifier"
         );
         return true;
-    }
-
-    function _hash(
-        address contactAddr,
-        address account,
-        uint256 amount,
-        uint256 total_account,
-        uint256 timestamp
-    ) internal pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    contactAddr,
-                    account,
-                    amount,
-                    total_account,
-                    timestamp
-                )
-            ).toEthSignedMessageHash();
     }
 }
 
