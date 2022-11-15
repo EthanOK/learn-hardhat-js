@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-contract NFTUtils {
+contract NFTUtils_A {
     function supportsInterface(address contactAddr, bytes4 interfaceId)
         external
         view

@@ -10,6 +10,16 @@ contract MyToken is ERC20, Pausable, Ownable {
         _mint(msg.sender, 1000 * 10**decimals());
     }
 
+    function mint(address account, uint256 amount)
+        public
+        whenNotPaused
+        onlyOwner
+        returns (bool)
+    {
+        _mint(account, amount);
+        return true;
+    }
+
     function pause() public onlyOwner {
         _pause();
     }

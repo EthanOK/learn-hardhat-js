@@ -10,11 +10,10 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     //
   }
 
-  console.log("Deploying MyToken...");
-  const args = ["MyToken", "erc"];
-  const contract = await deploy("MyToken", {
+  console.log("Deploying NFTUtils...");
+
+  const contract = await deploy("NFTUtils", {
     from: deployer,
-    args: args,
     log: true,
   });
 
@@ -26,9 +25,9 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     await verify(contract.address, args);
   }
 
-  log("MyToken deployed!");
+  log("NFTUtils deployed!");
   log("-----------------------");
 };
-module.exports.tags = ["MyToken"];
+module.exports.tags = ["NFTUtils"];
 
-// npx hardhat deploy --tags MyToken --network hardhat
+// npx hardhat deploy --tags NFTUtils --network hardhat

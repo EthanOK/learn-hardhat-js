@@ -19,9 +19,9 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         address sourceAccount;
     }
     // contactAddr => ContractData
-    mapping(address => ContractData) public contractDatas;
-    // erc20 balanceOf
-    mapping(address => mapping(address => uint256)) public erc20_balanceOf;
+    mapping(address => ContractData) private contractDatas;
+    // erc20 Sum of Claim
+    mapping(address => mapping(address => uint256)) public erc20_sumClaim;
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -71,8 +71,8 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
 
         require(
             amount > 0 &&
-                amount + erc20_balanceOf[contactAddr][account] <= total_account,
-            "Insufficient available balance"
+                amount + erc20_sumClaim[contactAddr][account] <= total_account,
+            "Exceed Claim Total"
         );
 
         // Verify account claimed
@@ -87,8 +87,8 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         ).toEthSignedMessageHash();
         _verify(contactAddr, hashdata, signature);
 
-        // add erc20_balanceOf
-        erc20_balanceOf[contactAddr][account] += amount;
+        // add erc20 sum Claim
+        erc20_sumClaim[contactAddr][account] += amount;
 
         // Transfer condition: sourceAccount approve this.addres
         IERC20Metadata erc20 = IERC20Metadata(contactAddr);
@@ -131,6 +131,25 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
 
         emit ClaimedERC721(contactAddr, account, tokenId);
         return true;
+    }
+
+    function getContractData(address contactAddr)
+        external
+        view
+        returns (address, address)
+    {
+        return (
+            contractDatas[contactAddr].verifier,
+            contractDatas[contactAddr].sourceAccount
+        );
+    }
+
+    function getSumClaimedERC20(address contactAddr, address account)
+        external
+        view
+        returns (uint256)
+    {
+        return erc20_sumClaim[contactAddr][account];
     }
 
     function _verify(
@@ -297,4 +316,6 @@ abstract contract QueryERC20Data {
     }
 }
 
-contract NFTUtils is QueryNFTData, QueryERC20Data, WhiteList {}
+contract NFTUtils is QueryNFTData, QueryERC20Data, WhiteList {
+    constructor() {}
+}

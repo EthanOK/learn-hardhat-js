@@ -290,4 +290,8 @@ abstract contract QueryERC20Data {
     }
 }
 
-contract NFTUtils is QueryNFTData, QueryERC20Data, WhiteListMerkle {}
+contract NFTUtilsWhiteListMerkle is
+    QueryNFTData,
+    QueryERC20Data,
+    WhiteListMerkle
+{}
