@@ -18,7 +18,7 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         // Whitelist Source Account
         address sourceAccount;
     }
-    // contactAddr => Data
+    // contactAddr => ContractData
     mapping(address => ContractData) public contractDatas;
     // erc20 balanceOf
     mapping(address => mapping(address => uint256)) public erc20_balanceOf;
