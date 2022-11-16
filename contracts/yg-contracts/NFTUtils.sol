@@ -166,13 +166,33 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
 }
 
 abstract contract QueryNFTData {
-    function supportsInterface(address contactAddr, bytes4 interfaceId)
+    // contract Is erc721
+    function contractIsERC721(address contactAddr)
         external
         view
         returns (bool)
     {
-        IERC165 erc165 = IERC165(contactAddr);
-        return erc165.supportsInterface(interfaceId);
+        try
+            IERC165(contactAddr).supportsInterface(type(IERC721).interfaceId)
+        returns (bool result) {
+            return result;
+        } catch {
+            return false;
+        }
+    }
+
+    function getSupportsInterface(address contactAddr, bytes4 interfaceId)
+        external
+        view
+        returns (bool)
+    {
+        try IERC165(contactAddr).supportsInterface(interfaceId) returns (
+            bool result
+        ) {
+            return result;
+        } catch {
+            return false;
+        }
     }
 
     function tokenURI(address contactAddr, uint256 tokenId)
@@ -240,25 +260,32 @@ abstract contract QueryNFTData {
         return erc721.isApprovedForAll(owner, operator);
     }
 
-    // totalSupply [return uint256 or error]
+    // totalSupply [return uint256 or revert]
     function totalSupply(address contactAddr) external view returns (uint256) {
         IERC721Enumerable erc721 = IERC721Enumerable(contactAddr);
         // function totalSupply() exist?
-        return erc721.totalSupply();
+        try erc721.totalSupply() returns (uint256 result) {
+            return result;
+        } catch {
+            revert("external call failed");
+        }
     }
 
-    // tokenOfOwnerByIndex [return uint256 or error]
+    // tokenOfOwnerByIndex [return uint256 or revert]
     function tokenOfOwnerByIndex(
         address contactAddr,
         address owner,
         uint256 index
     ) external view returns (uint256) {
         IERC721Enumerable erc721 = IERC721Enumerable(contactAddr);
-        // function tokenOfOwnerByIndex() exist?
-        return erc721.tokenOfOwnerByIndex(owner, index);
+        try erc721.tokenOfOwnerByIndex(owner, index) returns (uint256 result) {
+            return result;
+        } catch {
+            revert("external call failed");
+        }
     }
 
-    // tokenByIndex [return uint256 or error]
+    // tokenByIndex [return uint256 or revert]
     function tokenByIndex(address contactAddr, uint256 index)
         external
         view
@@ -266,7 +293,11 @@ abstract contract QueryNFTData {
     {
         IERC721Enumerable erc721 = IERC721Enumerable(contactAddr);
         // function tokenByIndex() exist?
-        return erc721.tokenByIndex(index);
+        try erc721.tokenByIndex(index) returns (uint256 result) {
+            return result;
+        } catch {
+            revert("external call failed");
+        }
     }
 }
 
