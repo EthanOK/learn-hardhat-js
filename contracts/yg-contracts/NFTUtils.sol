@@ -28,7 +28,7 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         _setupRole(OWNER_ROLE, msg.sender);
     }
 
-    event SetContractDatas(
+    event SetContractData(
         address indexed contactAddr,
         address indexed verifier,
         address indexed sourceAccount
@@ -44,14 +44,14 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         uint256 indexed tokenId
     );
 
-    function setContactDatas(
+    function setContactData(
         address contactAddr,
         address verifier,
         address sourceAccount
     ) external onlyRole(OWNER_ROLE) returns (bool) {
         contractDatas[contactAddr].verifier = verifier;
         contractDatas[contactAddr].sourceAccount = sourceAccount;
-        emit SetContractDatas(contactAddr, verifier, sourceAccount);
+        emit SetContractData(contactAddr, verifier, sourceAccount);
         return true;
     }
 
