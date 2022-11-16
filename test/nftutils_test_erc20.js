@@ -301,5 +301,5 @@ function getSignature(hashdata, signer) {
   let signature = signer.signMessage(binaryData);
   return signature;
 }
-// npx hardhat test test/nftutils_test.js
+// npx hardhat test test/nftutils_test_erc20.js
 // npx hardhat test --grep "SumClaimedERC20"
