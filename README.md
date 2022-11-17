@@ -4,6 +4,11 @@ This project demonstrates a basic Hardhat use case. It comes with a sample contr
 
 Try running some of the following tasks:
 
+If ethers.getContract is not a function  
+You should commnd "npm install -D @nomiclabs/hardhat-ethers@npm:hardhat-deploy-ethers"
+
+"npm install" install the package.json
+
 ```shell
 npx hardhat help
 npx hardhat test
@@ -17,3 +22,6 @@ npx hardhat blocknumber --network goerli
 npx hardhat flatten ./contracts/YGToken.sol > ./flattens/flattenedYGToken.sol
 npx hardhat deploy
 ```
+
+
+ 

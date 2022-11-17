@@ -10,8 +10,6 @@ describe("FundMe", async function () {
     deployer = (await getNamedAccounts()).deployer;
     // deploy
     await deployments.fixture(["all"]);
-    // if ethers.getContract is not a function
-    // npx install -D @nomiclabs/hardhat-ethers@npm:hardhat-deploy-ethers
     mockV3Aggregator = await ethers.getContract("MockV3Aggregator", deployer);
     fundMe = await ethers.getContract("FundMe", deployer);
   });

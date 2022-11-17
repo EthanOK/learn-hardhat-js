@@ -13,8 +13,6 @@ describe("NFTUtils", async function () {
     deployer = (await getNamedAccounts()).deployer;
     // deploy
     await deployments.fixture(["NFTUtils"]);
-    // if ethers.getContract is not a function
-    // npx install -D @nomiclabs/hardhat-ethers@npm:hardhat-deploy-ethers
     mytoken = await ethers.getContract("MyToken", deployer);
     nftutils = await ethers.getContract("NFTUtils", deployer);
     // deployer(owner) mint
