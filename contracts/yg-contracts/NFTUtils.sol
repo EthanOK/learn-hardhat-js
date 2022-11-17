@@ -5,13 +5,13 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 // WhiteList: Off-chain signature on-chain verification
-abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
+abstract contract WhiteList is Pausable, ReentrancyGuard, Ownable {
     using ECDSA for bytes32;
-    bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
+
     struct ContractData {
         // Whitelist verifier
         address verifier;
@@ -22,11 +22,6 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
     mapping(address => ContractData) private contractDatas;
     // erc20 Sum of Claim
     mapping(address => mapping(address => uint256)) public erc20_sumClaim;
-
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(OWNER_ROLE, msg.sender);
-    }
 
     event SetContractData(
         address indexed contactAddr,
@@ -48,7 +43,7 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
         address contactAddr,
         address verifier,
         address sourceAccount
-    ) external onlyRole(OWNER_ROLE) returns (bool) {
+    ) external onlyOwner returns (bool) {
         contractDatas[contactAddr].verifier = verifier;
         contractDatas[contactAddr].sourceAccount = sourceAccount;
         emit SetContractData(contactAddr, verifier, sourceAccount);
@@ -166,6 +161,19 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, AccessControl {
 }
 
 abstract contract QueryNFTData {
+    // get contract's owner
+    function getContractOwner(address contactAddr)
+        external
+        view
+        returns (address)
+    {
+        try Ownable(contactAddr).owner() returns (address _owner) {
+            return _owner;
+        } catch {
+            revert("external call failed");
+        }
+    }
+
     // contract Is erc721
     function contractIsERC721(address contactAddr)
         external
