@@ -5,7 +5,7 @@ This project demonstrates a basic Hardhat use case. It comes with a sample contr
 Try running some of the following tasks:
 
 If ethers.getContract is not a function  
-You should commnd "npm install --save-dev @nomiclabs/hardhat-ethers@npm:hardhat-deploy-ethers ethers"
+You should commnd "npm install --save-dev @nomiclabs/hardhat-ethers@npm:hardhat-deploy-ethers"
 
 "npm install" install the package.json
 

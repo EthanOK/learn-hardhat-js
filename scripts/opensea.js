@@ -21,5 +21,7 @@ async function use_ethers_getData() {
   //   _defaultProvider: [Function: func] { renetwork: [Function (anonymous)] }
   // }
   const balance = await provider.getBalance(account);
-  console.log(balance);
+  console.log("balance:" + balance.toString());
 }
+
+// npm install --save opensea-js
