@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "npx hardhat test",
-    "fundme_test_unit": "npx hardhat test test/fundme_test_unit.js",
+    "nftutils_test_erc721": "npx hardhat test test/nftutils_test_erc721.js",
     "compile": "npx hardhat compile",
     "size-contracts": "npx hardhat size-contracts",
     "node": "npx hardhat node",
