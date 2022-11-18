@@ -169,7 +169,7 @@ describe("NFTUtils", async function () {
     });
   });
 
-  /*   describe("Test WhiteList Set Contact Data", function () {
+  describe("Test WhiteList Set Contact Data", function () {
     it("onlyOwner Set Contact Data", async function () {
       let txResponse = await nftutils.setContactData(
         mynft.address,
@@ -200,62 +200,49 @@ describe("NFTUtils", async function () {
       assert.equal(v, verifier.address);
       assert.equal(s, sourceAccount.address);
     });
-  }); */
+  });
   /* 
-    function claimERC20(
+    function claimERC721(
         address contactAddr,
         address account,
-        uint256 amount,
-        uint256 total_account,
+        uint256 tokenId,
         uint256 timestamp,
         bytes calldata signature
-    ) external whenNotPaused nonReentrant returns (bool);
+    ) external nonReentrant returns (bool) ;
     */
-  /*   describe("Test WhiteList claimERC20", function () {
-    it("claimERC20 success", async function () {
-      let amount = ethers.utils.parseEther("100");
-      let amount1 = ethers.utils.parseEther("110");
-      let total = ethers.utils.parseEther("200");
+  describe("Test WhiteList claimERC721", function () {
+    it("claimERC721 success", async function () {
+      let result = await mynft.isApprovedForAll(
+        sourceAccount.address,
+        nftutils.address
+      );
+      assert.equal(result, true);
+      // sourceAccount.address huve 11 - 20
       let timestamp = Math.floor(new Date().getTime() / 1000) - 5;
-      // console.log("timestamp:" + timestamp);
+      let tokenId = 15;
+      let account = await mynft.ownerOf(tokenId);
+      assert.equal(account, sourceAccount.address);
+
       let hashdata = ethers.utils.solidityKeccak256(
-        ["address", "address", "uint256", "uint256", "uint256"],
-        [mynft.address, receiver.address, amount, total, timestamp]
+        ["address", "address", "uint256", "uint256"],
+        [mynft.address, receiver.address, tokenId, timestamp]
       );
       // console.log("hashdata:" + hashdata);
       let signature = await getSignature(hashdata, verifier);
       // console.log("signature:" + signature);
-      let balanceOfsourceAccountstart = await mynft.balanceOf(
-        sourceAccount.address
-      );
 
-      let balanceOfreceiverstart = await mynft.balanceOf(receiver.address);
-      // claimERC20
-      let txResponse = await nftutils.claimERC20(
+      let txResponse = await nftutils.claimERC721(
         mynft.address,
         receiver.address,
-        amount,
-        total,
+        tokenId,
         timestamp,
         signature
       );
       await txResponse.wait(1);
-
-      let balanceOfsourceAccountend = await mynft.balanceOf(
-        sourceAccount.address
-      );
-      let balanceOfReceiverend = await mynft.balanceOf(receiver.address);
-
-      assert.equal(
-        balanceOfsourceAccountstart.sub(balanceOfsourceAccountend).toString(),
-        balanceOfReceiverend.sub(balanceOfreceiverstart).toString()
-      );
-      assert.equal(
-        balanceOfsourceAccountstart.sub(balanceOfsourceAccountend).toString(),
-        amount.toString()
-      );
+      let account1 = await mynft.ownerOf(tokenId);
+      assert.equal(account1, receiver.address);
     });
-    it("signer is not verifier, claimERC20 will be reverted", async function () {
+    /* it("signer is not verifier, claimERC20 will be reverted", async function () {
       let amount = ethers.utils.parseEther("100");
       let total = ethers.utils.parseEther("200");
       let timestamp = Math.floor(new Date().getTime() / 1000) - 5;
@@ -357,8 +344,8 @@ describe("NFTUtils", async function () {
       await expect(txResponse).to.be.revertedWith(
         "ERC20: insufficient allowance"
       );
-    });
-  }); */
+    }); */
+  });
 });
 
 function getSignature(hashdata, signer) {
