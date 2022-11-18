@@ -161,7 +161,7 @@ abstract contract WhiteList is Pausable, ReentrancyGuard, Ownable {
 }
 
 abstract contract QueryNFTData {
-    // get contract's owner
+    // get contract's owner [return address or revert]
     function getContractOwner(address contactAddr)
         external
         view
