@@ -132,7 +132,7 @@ IERC721Enumerable：0x780e9d63
 
 IERC1155：0xd9b67a26
 
-### 12、contractIsERC721(address contactAddr)
+### 12、contractIsERC721(address)
 
 ```solidity
 function contractIsERC721(address contactAddr)
@@ -142,6 +142,17 @@ function contractIsERC721(address contactAddr)
 ```
 
 功能：查询合约（contactAddr）是否为ERC721合约，返回bool类型。
+
+### 13、getContractOwner(address)
+
+```solidity
+function getContractOwner(address contactAddr)
+    external
+    view
+    returns (address);
+```
+
+功能：查询合约（contactAddr）的Owner，返回address类型。
 
 
 

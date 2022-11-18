@@ -8,12 +8,13 @@ describe("NFTUtils", async function () {
   let mytoken;
   let nftutils;
   let deployer;
-
+  let mockV3Aggregator;
   beforeEach(async function () {
     [owner, sourceAccount, verifier, receiver] = await ethers.getSigners();
     deployer = (await getNamedAccounts()).deployer;
     // deploy
     await deployments.fixture(["NFTUtils"]);
+    mockV3Aggregator = await ethers.getContract("MockV3Aggregator");
     mytoken = await ethers.getContract("MyToken", deployer);
     mynft = await ethers.getContract("MyNFT", deployer);
     nftutils = await ethers.getContract("NFTUtils", deployer);
@@ -154,6 +155,17 @@ describe("NFTUtils", async function () {
       let result1 = await nftutils.contractIsERC721(mytoken.address);
       assert.equal(result0, true);
       assert.equal(result1, false);
+    });
+    it("getContractOwner", async function () {
+      let address0 = await nftutils.getContractOwner(mynft.address);
+      let address1 = await nftutils.getContractOwner(mytoken.address);
+      assert.equal(address0, address1);
+      assert.equal(address0, owner.address);
+      try {
+        await nftutils.getContractOwner(mockV3Aggregator.address);
+      } catch (error) {
+        assert.equal(error.reason, "external call failed");
+      }
     });
   });
 
