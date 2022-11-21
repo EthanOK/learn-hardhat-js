@@ -242,83 +242,83 @@ describe("NFTUtils", async function () {
       let account1 = await mynft.ownerOf(tokenId);
       assert.equal(account1, receiver.address);
     });
-    /* it("signer is not verifier, claimERC20 will be reverted", async function () {
-      let amount = ethers.utils.parseEther("100");
-      let total = ethers.utils.parseEther("200");
-      let timestamp = Math.floor(new Date().getTime() / 1000) - 5;
-      // console.log("timestamp:" + timestamp);
-      let hashdata = ethers.utils.solidityKeccak256(
-        ["address", "address", "uint256", "uint256", "uint256"],
-        [mynft.address, receiver.address, amount, total, timestamp]
-      );
-      // console.log("hashdata:" + hashdata);
-      let signature = await getSignature(hashdata, owner);
-      // console.log("signature:" + signature);
 
-      // claimERC20
-      let txResponse = nftutils.claimERC20(
+    it("signer is not verifier, claimERC721 will be reverted", async function () {
+      let timestamp = Math.floor(new Date().getTime() / 1000) - 5;
+      let tokenId = 15;
+      let account = await mynft.ownerOf(tokenId);
+      assert.equal(account, sourceAccount.address);
+
+      let hashdata = ethers.utils.solidityKeccak256(
+        ["address", "address", "uint256", "uint256"],
+        [mynft.address, receiver.address, tokenId, timestamp]
+      );
+
+      let signature = await getSignature(hashdata, owner);
+
+      let txResponse = nftutils.claimERC721(
         mynft.address,
         receiver.address,
-        amount,
-        total,
+        tokenId,
         timestamp,
         signature
       );
+
       await expect(txResponse).to.be.revertedWith("Invalid signature");
     });
+
     it("change some parameter(be signed), claimERC20 will be reverted", async function () {
-      let amount = ethers.utils.parseEther("100");
-      let total = ethers.utils.parseEther("200");
       let timestamp = Math.floor(new Date().getTime() / 1000) - 5;
-      // console.log("timestamp:" + timestamp);
+      let tokenId = 15;
+      let changetokenId = 20;
+      let account = await mynft.ownerOf(tokenId);
+      assert.equal(account, sourceAccount.address);
+
       let hashdata = ethers.utils.solidityKeccak256(
-        ["address", "address", "uint256", "uint256", "uint256"],
-        [mynft.address, receiver.address, amount, total, timestamp]
+        ["address", "address", "uint256", "uint256"],
+        [mynft.address, receiver.address, tokenId, timestamp]
       );
-      // console.log("hashdata:" + hashdata);
+
       let signature = await getSignature(hashdata, verifier);
-      // console.log("signature:" + signature);
 
-      let changeAmount = ethers.utils.parseEther("180");
-
-      // claimERC20
-      let txResponse = nftutils.claimERC20(
+      let txResponse = nftutils.claimERC721(
         mynft.address,
         receiver.address,
-        changeAmount,
-        total,
+        changetokenId,
         timestamp,
         signature
       );
       await expect(txResponse).to.be.revertedWith("Invalid signature");
     });
     it("block.timestamp - timestamp > 180, claimERC20 will be reverted", async function () {
-      let amount = ethers.utils.parseEther("100");
-      let total = ethers.utils.parseEther("200");
       // block.timestamp ~= Math.floor(new Date().getTime() / 1000)
       // Should: 0 <= interval <= 180
       let interval = 200;
       let timestamp = Math.floor(new Date().getTime() / 1000) - interval;
-      // console.log("timestamp:" + timestamp);
-      let hashdata = ethers.utils.solidityKeccak256(
-        ["address", "address", "uint256", "uint256", "uint256"],
-        [mynft.address, receiver.address, amount, total, timestamp]
-      );
-      // console.log("hashdata:" + hashdata);
-      let signature = await getSignature(hashdata, verifier);
-      // console.log("signature:" + signature);
 
-      // claimERC20
-      let txResponse = nftutils.claimERC20(
+      let tokenId = 15;
+      let account = await mynft.ownerOf(tokenId);
+      assert.equal(account, sourceAccount.address);
+
+      let hashdata = ethers.utils.solidityKeccak256(
+        ["address", "address", "uint256", "uint256"],
+        [mynft.address, receiver.address, tokenId, timestamp]
+      );
+
+      let signature = await getSignature(hashdata, verifier);
+
+      let txResponse = nftutils.claimERC721(
         mynft.address,
         receiver.address,
-        amount,
-        total,
+        tokenId,
         timestamp,
         signature
       );
+
       await expect(txResponse).to.be.revertedWith("expiration time");
     });
+    /* 
+ 
     it("allowance(sourceAccount, nftutils) 1000 and receiver claim 1100, claimERC20 will be reverted", async function () {
       let amount = ethers.utils.parseEther("1100");
       let total = ethers.utils.parseEther("2000");
