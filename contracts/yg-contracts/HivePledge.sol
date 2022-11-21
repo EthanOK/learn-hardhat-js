@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 contract HivePledge is Ownable {
     using SafeMath for uint256;
 
@@ -60,7 +61,8 @@ contract HivePledge is Ownable {
         view
         returns (uint)
     {
-        return _endtime.sub(_startTime).div(day_timestamp);
+        uint256 _days = (_endtime - _startTime) / day_timestamp;
+        return _days;
     }
 
     function getDayTotalPledge(uint _day) external view returns (uint) {
