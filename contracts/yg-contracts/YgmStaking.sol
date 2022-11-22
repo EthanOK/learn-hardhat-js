@@ -20,89 +20,142 @@ interface IYGM {
 }
 
 abstract contract YgmStakingBase is Pausable, Ownable {
-    // sign expiration time
-    uint256 internal constant EXP_TIME = 180;
-
     // staking data event
     event Stake(
         address indexed account,
         uint256 indexed tokenId,
-        uint256 startTime,
-        uint256 endTime
+        uint256 startTime
     );
+    event WithdrawEarn(address indexed account, uint256 amount);
     // staking data
     struct StakingData {
         address account;
         uint64 startTime;
-        uint64 endTime;
+        bool state;
     }
+
     // todo YGM token
     IYGM ygm = IYGM(0x025d7D6df01074065B8Cfc9cb78456d417BBc6b7);
+    // todo usdt token
+    IERC20 usdt = IERC20(0x025d7D6df01074065B8Cfc9cb78456d417BBc6b7);
+
+    uint64 public create_time;
+    uint64 public day_timestamp = 1 days;
+    uint64 public earnRate = 70;
+
     // Staking Data
     mapping(uint256 => StakingData) public stakingDatas;
-    // tokenId staked state
-    mapping(uint256 => bool) public stakedState;
+
     // account staking tokenId list
     mapping(address => uint256[]) internal stakingTokenIds;
-    // account staked and staking tokenId list
-    mapping(address => uint256[]) internal stakeTokenIds;
+
+    address public paymentAccount;
+    mapping(uint256 => uint256) public day_total_usdt; //记录某天所有用户共分多少usdt
+
+    mapping(uint256 => uint256) public day_total_stake; // 记录某天的ygm质押总量
+    // // account staked and staking tokenId list
+    // mapping(address => uint256[]) internal stakeTokenIds;
     // stake totals
-    mapping(bytes => uint256) public stakeTotals;
+    uint64 public stakeTotals; //记录所有质押YGM的总数
+    uint64 public accountTotals; //记录当前参与质押的账户数量
+
+    mapping(address => uint256) public stakeTime; //记录某用户质押的当前时间
+    mapping(address => uint256) public stakeEarnAmount; //记录某用户质押的收益
+
+    function getDays(uint _endtime, uint _startTime)
+        public
+        view
+        returns (uint)
+    {
+        uint256 _days = (_endtime - _startTime) / day_timestamp;
+        return _days;
+    }
+
+    function getReward(address _sender) public view returns (uint) {
+        if (0 < stakeTime[_sender]) {
+            uint256 account_staking_amount = stakingTokenIds[_sender].length;
+            require(account_staking_amount > 0, "User doesn't stake");
+            uint _start = getDays(stakeTime[_sender], create_time);
+            uint _end = getDays(block.timestamp, create_time);
+
+            uint _totalEarn = 0;
+
+            for (uint i = _start; i < _end; i++) {
+                if (0 < day_total_stake[i]) {
+                    uint _earn = (day_total_usdt[i] * account_staking_amount) /
+                        day_total_stake[i];
+                    _totalEarn += _earn;
+                }
+            }
+
+            return _totalEarn + stakeEarnAmount[_sender];
+        } else {
+            return 0;
+        }
+    }
 }
 
 contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
-    function stake(
-        uint256[] calldata _tokenIds,
-        uint256 timestamp,
-        bytes calldata signature
-    ) external whenNotPaused nonReentrant returns (bool) {
-        require(_tokenIds.length > 0, "invalid tokenIds");
-        require(timestamp + EXP_TIME >= block.timestamp, "expiration time");
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
+    // update stake earn
+    modifier updateEarn() {
+        address _sender = _msgSender();
+        if (create_time < stakeTime[_sender]) {
+            stakeEarnAmount[_sender] = getReward(_sender);
+        }
+        stakeTime[_sender] = block.timestamp;
+        _;
+    }
+
+    // batch stake YGM
+    function stake(uint256[] calldata _tokenIds)
+        external
+        whenNotPaused
+        nonReentrant
+        updateEarn
+        returns (bool)
+    {
+        address _sender = _msgSender();
+        uint256 _number = _tokenIds.length;
+        require(_number > 0, "invalid tokenIds");
+
+        for (uint256 i = 0; i < _number; i++) {
             require(_tokenIds[i] > 0, "invalid tokenId");
-            require(!stakedState[_tokenIds[i]], "invalid stake state");
-            require(ygm.ownerOf(_tokenIds[i]) == msg.sender, "invalid owner");
+            require(!stakingDatas[_tokenIds[i]].state, "invalid stake state");
+            require(ygm.ownerOf(_tokenIds[i]) == _sender, "invalid owner");
         }
 
-        // verify sign message
-        //_verify(_signStake(), signature);
-
-        if (stakingTokenIds[msg.sender].length == 0) {
-            stakeTotals[bytes("accountTotal")] += 1;
+        if (stakingTokenIds[_sender].length == 0) {
+            accountTotals += 1;
         }
 
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
+        for (uint256 i = 0; i < _number; i++) {
             uint256 _tokenId = _tokenIds[i];
             ygm.safeTransferFrom(msg.sender, address(this), _tokenId);
 
-            // todo endtime?
-            uint256 _endtime = block.timestamp + 7 * 1 days;
-            StakingData memory _data = StakingData({
-                account: msg.sender,
-                startTime: uint64(block.timestamp),
-                endTime: uint64(_endtime)
-            });
-            stakingDatas[_tokenId] = _data;
-            emit Stake(_data.account, _tokenId, _data.startTime, _data.endTime);
+            StakingData storage _data = stakingDatas[_tokenId];
+
+            _data.account = _sender;
+            _data.startTime = uint64(block.timestamp);
+            _data.state = true;
+
+            emit Stake(_data.account, _tokenId, _data.startTime);
 
             //stakingTokenIds
             stakingTokenIds[msg.sender].push(_tokenId);
 
-            //stakeTokenIds
-            uint8 _state = 0;
-            for (uint256 j = 0; j < stakeTokenIds[msg.sender].length; j++) {
-                if (stakeTokenIds[msg.sender][j] == _tokenId) _state = 1;
-            }
-            if (_state == 0) stakeTokenIds[msg.sender].push(_tokenId);
-
-            if (!stakedState[_tokenId]) {
-                stakeTotals[bytes("ygmTotal")] += 1;
-                stakedState[_tokenId] = true;
-            }
+            // //stakeTokenIds
+            // uint8 _state = 0;
+            // for (uint256 j = 0; j < stakeTokenIds[msg.sender].length; j++) {
+            //     if (stakeTokenIds[msg.sender][j] == _tokenId) _state = 1;
+            // }
+            // if (_state == 0) stakeTokenIds[msg.sender].push(_tokenId);
         }
+
+        stakeTotals += uint64(_number);
         return true;
     }
 
+    // batch stake YGM
     function unStake(uint256[] calldata _tokenIds)
         external
         whenNotPaused
@@ -115,11 +168,45 @@ contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
             require(_tokenId > 0, "invalid tokenId");
             StakingData storage _data = stakingDatas[_tokenId];
             require(_data.account == msg.sender, "invalid account");
-            require(stakedState[_tokenId], "invalid stake state");
+            require(_data.state, "invalid stake state");
 
             // safeTransferFrom
             ygm.safeTransferFrom(address(this), _data.account, _tokenId);
         }
         return true;
+    }
+
+    //  withdraw Earn (YGM in this contract)
+    function withdrawEarn()
+        public
+        whenNotPaused
+        nonReentrant
+        updateEarn
+        returns (bool)
+    {
+        address sender = _msgSender();
+
+        uint _days = getDays(block.timestamp, create_time);
+        deduction(sender, _days);
+
+        uint earnAmount = stakeEarnAmount[sender];
+
+        require(earnAmount > 0, "No balance for harvest");
+        stakeEarnAmount[sender] = 0;
+
+        usdt.transferFrom(paymentAccount, sender, earnAmount);
+
+        emit WithdrawEarn(sender, earnAmount);
+
+        return true;
+    }
+
+    function deduction(address _account, uint _datys) private {
+        if (accountTotals > 0) {
+            uint _earnAmount = stakeEarnAmount[_account];
+            uint _realEarnAmount = (_earnAmount * earnRate) / 100;
+            stakeEarnAmount[_account] = _realEarnAmount;
+            day_total_usdt[_datys] += (_earnAmount - _realEarnAmount);
+        }
     }
 }

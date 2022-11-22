@@ -14,7 +14,7 @@ https://docs.etherscan.io/api-endpoints/accounts#get-a-list-of-erc721-token-tran
 
 Mint: from = "0x0000000000000000000000000000000000000000";
 
-https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress=0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D&address=0x0000000000000000000000000000000000000000&page=1&offset=10000&startblock=0&endblock=latest&sort=asc&apikey=YourApiKeyToken
+https://api.etherscan.io/api?module=account&action=tokennfttx&contractaddress=0x025d7D6df01074065B8Cfc9cb78456d417BBc6b7&address=0x0000000000000000000000000000000000000000&page=1&offset=10000&startblock=0&endblock=latest&sort=asc&apikey=YourApiKeyToken
 
 ## Get Event Logs by Address filtered by Topics:
 
