@@ -24,13 +24,18 @@ abstract contract YgmStakingBase is Pausable, Ownable {
     event Stake(
         address indexed account,
         uint256 indexed tokenId,
-        uint256 startTime
+        uint256 timestamp
+    );
+    event UnStake(
+        address indexed account,
+        uint256 indexed tokenId,
+        uint256 timestamp
     );
     event WithdrawEarn(address indexed account, uint256 amount);
+
     // staking data
     struct StakingData {
         address account;
-        uint64 startTime;
         bool state;
     }
 
@@ -62,28 +67,28 @@ abstract contract YgmStakingBase is Pausable, Ownable {
     mapping(address => uint256) public stakeTime; //记录某用户质押的当前时间
     mapping(address => uint256) public stakeEarnAmount; //记录某用户质押的收益
 
-    function getDays(uint _endtime, uint _startTime)
+    function getDays(uint256 _endtime, uint256 _startTime)
         public
         view
-        returns (uint)
+        returns (uint256)
     {
         uint256 _days = (_endtime - _startTime) / day_timestamp;
         return _days;
     }
 
-    function getReward(address _sender) public view returns (uint) {
+    function getReward(address _sender) public view returns (uint256) {
         if (0 < stakeTime[_sender]) {
             uint256 account_staking_amount = stakingTokenIds[_sender].length;
-            require(account_staking_amount > 0, "User doesn't stake");
-            uint _start = getDays(stakeTime[_sender], create_time);
-            uint _end = getDays(block.timestamp, create_time);
+            require(account_staking_amount > 0, "Account doesn't stake");
+            uint256 _start = getDays(stakeTime[_sender], create_time);
+            uint256 _end = getDays(block.timestamp, create_time);
 
-            uint _totalEarn = 0;
+            uint256 _totalEarn = 0;
 
-            for (uint i = _start; i < _end; i++) {
+            for (uint256 i = _start; i < _end; i++) {
                 if (0 < day_total_stake[i]) {
-                    uint _earn = (day_total_usdt[i] * account_staking_amount) /
-                        day_total_stake[i];
+                    uint256 _earn = (day_total_usdt[i] *
+                        account_staking_amount) / day_total_stake[i];
                     _totalEarn += _earn;
                 }
             }
@@ -92,6 +97,11 @@ abstract contract YgmStakingBase is Pausable, Ownable {
         } else {
             return 0;
         }
+    }
+
+    function _syncDayTotalStake() internal {
+        uint256 _days = getDays(block.timestamp, create_time);
+        day_total_stake[_days] = stakeTotals;
     }
 }
 
@@ -135,23 +145,18 @@ contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
             StakingData storage _data = stakingDatas[_tokenId];
 
             _data.account = _sender;
-            _data.startTime = uint64(block.timestamp);
+
             _data.state = true;
 
-            emit Stake(_data.account, _tokenId, _data.startTime);
-
-            //stakingTokenIds
+            //_tokenId add in stakingTokenIds[account] list
             stakingTokenIds[msg.sender].push(_tokenId);
 
-            // //stakeTokenIds
-            // uint8 _state = 0;
-            // for (uint256 j = 0; j < stakeTokenIds[msg.sender].length; j++) {
-            //     if (stakeTokenIds[msg.sender][j] == _tokenId) _state = 1;
-            // }
-            // if (_state == 0) stakeTokenIds[msg.sender].push(_tokenId);
+            emit Stake(_sender, _tokenId, block.timestamp);
         }
 
+        // add stake Totals
         stakeTotals += uint64(_number);
+        _syncDayTotalStake();
         return true;
     }
 
@@ -160,23 +165,54 @@ contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
         external
         whenNotPaused
         nonReentrant
+        updateEarn
         returns (bool)
     {
-        require(_tokenIds.length > 0, "invalid tokenIds");
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
+        address _sender = _msgSender();
+        uint256 _number = _tokenIds.length;
+        require(_number > 0, "invalid tokenIds");
+        for (uint256 i = 0; i < _number; i++) {
             uint256 _tokenId = _tokenIds[i];
             require(_tokenId > 0, "invalid tokenId");
             StakingData storage _data = stakingDatas[_tokenId];
-            require(_data.account == msg.sender, "invalid account");
+            require(_data.account == _sender, "invalid account");
             require(_data.state, "invalid stake state");
 
             // safeTransferFrom
             ygm.safeTransferFrom(address(this), _data.account, _tokenId);
+
+            // delete tokenId
+            uint256 _len = stakingTokenIds[_sender].length;
+            for (uint256 j = 0; j < _len; j++) {
+                if (stakingTokenIds[_sender][j] == _tokenId) {
+                    stakingTokenIds[_sender][j] = stakingTokenIds[_sender][
+                        _len - 1
+                    ];
+                    stakingTokenIds[msg.sender].pop();
+                    break;
+                }
+            }
+
+            // sub account total
+            if (stakingTokenIds[_sender].length == 0) {
+                accountTotals -= 1;
+            }
+            // reset data
+            _data.state = false;
+
+            emit UnStake(_sender, _tokenId, block.timestamp);
         }
+        if (stakeEarnAmount[_sender] > 0) {
+            require(withdrawEarn(), "withdraw failure");
+        }
+        // sun stake Totals
+        stakeTotals -= uint64(_number);
+        _syncDayTotalStake();
         return true;
     }
 
-    //  withdraw Earn (YGM in this contract)
+    // withdraw Earn USDT
+    // (YGM is still stake in the contract)
     function withdrawEarn()
         public
         whenNotPaused
@@ -186,27 +222,28 @@ contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
     {
         address sender = _msgSender();
 
-        uint _days = getDays(block.timestamp, create_time);
-        deduction(sender, _days);
+        deduction(sender);
+        uint256 earnAmount = stakeEarnAmount[sender];
 
-        uint earnAmount = stakeEarnAmount[sender];
+        require(
+            earnAmount > 0,
+            "Insufficient balance available for withdrawal"
+        );
 
-        require(earnAmount > 0, "No balance for harvest");
         stakeEarnAmount[sender] = 0;
-
         usdt.transferFrom(paymentAccount, sender, earnAmount);
 
         emit WithdrawEarn(sender, earnAmount);
-
         return true;
     }
 
-    function deduction(address _account, uint _datys) private {
+    function deduction(address _account) private {
+        uint256 _days = getDays(block.timestamp, create_time);
         if (accountTotals > 0) {
-            uint _earnAmount = stakeEarnAmount[_account];
-            uint _realEarnAmount = (_earnAmount * earnRate) / 100;
+            uint256 _earnAmount = stakeEarnAmount[_account];
+            uint256 _realEarnAmount = (_earnAmount * earnRate) / 100;
             stakeEarnAmount[_account] = _realEarnAmount;
-            day_total_usdt[_datys] += (_earnAmount - _realEarnAmount);
+            day_total_usdt[_days] += (_earnAmount - _realEarnAmount);
         }
     }
 }
