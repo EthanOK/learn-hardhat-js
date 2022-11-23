@@ -46,7 +46,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     // todo usdt token
     IERC20 usdt;
     // todo Time period
-    uint64 public day_timestamp = 1 days;
+    uint64 public perPeriod;
 
     // Payment account
     address public paymentAccount;
@@ -72,26 +72,30 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     mapping(address => uint256) public stakeEarnAmount;
 
     // Set the amount of usdt allocated on a certain day (onlyOwner)
-    function setDayAmount(uint _usdtAmount) external onlyOwner returns (bool) {
-        uint _days = getDays(create_time, block.timestamp);
-        day_total_usdt[_days] += _usdtAmount;
-        return true;
-    }
-
-    // Set create_time and day_timestamp (onlyOwner)
-    function start(uint _create_time, uint _day_timestamp)
+    function setDayAmount(uint256 _usdtAmount)
         external
         onlyOwner
         returns (bool)
     {
-        require(_create_time > 0 && _day_timestamp > 0, "set time error");
+        uint256 _days = getDays(create_time, block.timestamp);
+        day_total_usdt[_days] += _usdtAmount;
+        return true;
+    }
+
+    // Set create time and per period time (onlyOwner)
+    function start(uint256 _create_time, uint256 _period)
+        public
+        onlyOwner
+        returns (bool)
+    {
+        require(_create_time > 0 && _period > 0, "set time error");
         create_time = uint64(_create_time);
-        day_timestamp = uint64(_day_timestamp);
+        perPeriod = uint64(_period);
         return true;
     }
 
     // Set eran rate (onlyOwner)
-    function setRate(uint _rate) external onlyOwner returns (bool) {
+    function setRate(uint256 _rate) external onlyOwner returns (bool) {
         require(_rate <= 100, "set rate error");
         earnRate = uint64(_rate);
         return true;
@@ -120,7 +124,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     }
 
     // Withdraw YGM (onlyOwner) No profit, only withdraw YGM
-    function withdrawYgm(address _account, uint _tokenId)
+    function withdrawYgm(address _account, uint256 _tokenId)
         external
         onlyOwner
         returns (bool)
@@ -155,7 +159,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     }
 
     // Get the total amount of staking on a certain day
-    function getDayTotalStake(uint _day) external view returns (uint) {
+    function getDayTotalStake(uint256 _day) external view returns (uint256) {
         return day_total_stake[_day];
     }
 
@@ -174,7 +178,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         view
         returns (uint256)
     {
-        uint256 _days = (_endtime - _startTime) / day_timestamp;
+        uint256 _days = (_endtime - _startTime) / perPeriod;
         return _days;
     }
 
@@ -238,13 +242,17 @@ abstract contract YgmStakingBase is Ownable, Pausable {
 
 contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
     constructor(
-        address ygm_address,
-        address usdt_address,
-        address payment
+        address ygmAddress,
+        address usdtAddress,
+        address payment,
+        uint256 createTime,
+        uint256 perPeriod
     ) {
-        ygm = IERC721(ygm_address);
-        usdt = IERC20(usdt_address);
+        ygm = IERC721(ygmAddress);
+        usdt = IERC20(usdtAddress);
         paymentAccount = payment;
+        create_time = uint64(createTime);
+        perPeriod = uint64(perPeriod);
     }
 
     // Batch stake YGM

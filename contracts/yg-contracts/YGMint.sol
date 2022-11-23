@@ -112,9 +112,9 @@ contract YGMint is ERC721URIStorage {
     // uint firstLeave = 1 * 10 ** 17;
     // uint secondtLeave = 5 * 10 ** 16;
 
-    uint256 mintTotal = 66;
+    uint256 mintTotal = 666;
 
-    uint256 teamMax = 6;
+    uint256 teamMax = 66;
     uint256 teamMint = 0;
 
     uint256 mintMax = 12;
