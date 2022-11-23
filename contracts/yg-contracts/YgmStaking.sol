@@ -119,7 +119,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         return true;
     }
 
-    // Withdraw YGm (onlyOwner)
+    // Withdraw YGM (onlyOwner) No profit, only withdraw YGM
     function withdrawYgm(address _account, uint _tokenId)
         external
         onlyOwner
@@ -129,7 +129,28 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         require(_data.state == true, "tokenId isn't staked");
         require(_data.account == _account, "tokenId doesn't belong to account");
         ygm.safeTransferFrom(address(this), _account, _tokenId);
+
+        // Delete tokenId in stakingTokenIds
+        uint256 _len = stakingTokenIds[_account].length;
+        for (uint256 j = 0; j < _len; j++) {
+            if (stakingTokenIds[_account][j] == _tokenId) {
+                stakingTokenIds[_account][j] = stakingTokenIds[_account][
+                    _len - 1
+                ];
+                stakingTokenIds[msg.sender].pop();
+                break;
+            }
+        }
+        // Sub account total
+        if (stakingTokenIds[_account].length == 0) {
+            accountTotals -= 1;
+        }
+
+        // Delete tokenId in stakingDatas
         delete stakingDatas[_tokenId];
+        // Sub stake Totals
+        stakeTotals -= 1;
+        _syncDayTotalStake();
         return true;
     }
 
@@ -204,7 +225,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         return _realEarnAmount;
     }
 
-    // Update stake earn
+    // Update stake earn (modifier)
     modifier updateEarn() {
         address _sender = _msgSender();
         if (create_time < stakeTime[_sender]) {
