@@ -40,34 +40,53 @@ abstract contract YgmStakingBase is Pausable, Ownable {
     }
 
     // todo YGM token
-    IYGM ygm = IYGM(0x025d7D6df01074065B8Cfc9cb78456d417BBc6b7);
+    IYGM immutable ygm;
     // todo usdt token
-    IERC20 usdt = IERC20(0x025d7D6df01074065B8Cfc9cb78456d417BBc6b7);
+    IERC20 immutable usdt;
 
     uint64 public create_time;
     uint64 public day_timestamp = 1 days;
     uint64 public earnRate = 70;
 
+    // stake totals
+    uint64 public stakeTotals; //记录所有质押YGM的总数
+    uint64 public accountTotals; //记录当前参与质押的账户数量
+
+    address public paymentAccount;
     // Staking Data
     mapping(uint256 => StakingData) public stakingDatas;
 
     // account staking tokenId list
     mapping(address => uint256[]) internal stakingTokenIds;
 
-    address public paymentAccount;
     mapping(uint256 => uint256) public day_total_usdt; //记录某天所有用户共分多少usdt
 
-    mapping(uint256 => uint256) public day_total_stake; // 记录某天的ygm质押总量
-    // // account staked and staking tokenId list
-    // mapping(address => uint256[]) internal stakeTokenIds;
-    // stake totals
-    uint64 public stakeTotals; //记录所有质押YGM的总数
-    uint64 public accountTotals; //记录当前参与质押的账户数量
+    // the total amount of ygm staked on a certain day
+    mapping(uint256 => uint256) public day_total_stake;
 
     mapping(address => uint256) public stakeTime; //记录某用户质押的当前时间
     mapping(address => uint256) public stakeEarnAmount; //记录某用户质押的收益
 
-    function getDays(uint256 _endtime, uint256 _startTime)
+    constructor(address ygm_address, address usdt_address) {
+        ygm = IYGM(ygm_address);
+        usdt = IERC20(usdt_address);
+    }
+
+    function getDayTotalStake(uint _day) external view returns (uint) {
+        return day_total_stake[_day];
+    }
+
+    // get account staking tokenId list
+    function getStakingTokenIds(address _account)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        uint256[] memory _tokenIds = stakingTokenIds[_account];
+        return _tokenIds;
+    }
+
+    function getDays(uint256 _startTime, uint256 _endtime)
         public
         view
         returns (uint256)
@@ -80,8 +99,8 @@ abstract contract YgmStakingBase is Pausable, Ownable {
         if (0 < stakeTime[_sender]) {
             uint256 account_staking_amount = stakingTokenIds[_sender].length;
             require(account_staking_amount > 0, "Account doesn't stake");
-            uint256 _start = getDays(stakeTime[_sender], create_time);
-            uint256 _end = getDays(block.timestamp, create_time);
+            uint256 _start = getDays(create_time, stakeTime[_sender]);
+            uint256 _end = getDays(create_time, block.timestamp);
 
             uint256 _totalEarn = 0;
 
@@ -100,12 +119,29 @@ abstract contract YgmStakingBase is Pausable, Ownable {
     }
 
     function _syncDayTotalStake() internal {
-        uint256 _days = getDays(block.timestamp, create_time);
+        uint256 _days = getDays(create_time, block.timestamp);
         day_total_stake[_days] = stakeTotals;
     }
-}
 
-contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
+    function _withdrawEarn(address _account) internal returns (uint256) {
+        // calculate the withdrawal ratio
+        uint256 _realEarnAmount;
+        uint256 _days = getDays(create_time, block.timestamp);
+        if (accountTotals > 0) {
+            uint256 _earnAmount = stakeEarnAmount[_account];
+            _realEarnAmount = (_earnAmount * earnRate) / 100;
+            day_total_usdt[_days] += (_earnAmount - _realEarnAmount);
+        }
+
+        require(
+            _realEarnAmount > 0,
+            "Insufficient balance available for withdrawal"
+        );
+        stakeEarnAmount[_account] = 0;
+        usdt.transferFrom(paymentAccount, _account, _realEarnAmount);
+        return _realEarnAmount;
+    }
+
     // update stake earn
     modifier updateEarn() {
         address _sender = _msgSender();
@@ -114,6 +150,16 @@ contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
         }
         stakeTime[_sender] = block.timestamp;
         _;
+    }
+}
+
+contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
+    constructor(
+        address ygm_address,
+        address usdt_address,
+        address payment
+    ) YgmStakingBase(ygm_address, usdt_address) {
+        paymentAccount = payment;
     }
 
     // batch stake YGM
@@ -203,7 +249,8 @@ contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
             emit UnStake(_sender, _tokenId, block.timestamp);
         }
         if (stakeEarnAmount[_sender] > 0) {
-            require(withdrawEarn(), "withdraw failure");
+            uint256 amount = _withdrawEarn(_sender);
+            emit WithdrawEarn(_sender, amount);
         }
         // sun stake Totals
         stakeTotals -= uint64(_number);
@@ -214,36 +261,16 @@ contract YgmStaking is Pausable, ReentrancyGuard, ERC721Holder, YgmStakingBase {
     // withdraw Earn USDT
     // (YGM is still stake in the contract)
     function withdrawEarn()
-        public
+        external
         whenNotPaused
         nonReentrant
         updateEarn
         returns (bool)
     {
         address sender = _msgSender();
-
-        deduction(sender);
-        uint256 earnAmount = stakeEarnAmount[sender];
-
-        require(
-            earnAmount > 0,
-            "Insufficient balance available for withdrawal"
-        );
-
-        stakeEarnAmount[sender] = 0;
-        usdt.transferFrom(paymentAccount, sender, earnAmount);
-
-        emit WithdrawEarn(sender, earnAmount);
+        require(stakeEarnAmount[sender] > 0, "Insufficient balance");
+        uint256 amount = _withdrawEarn(sender);
+        emit WithdrawEarn(sender, amount);
         return true;
-    }
-
-    function deduction(address _account) private {
-        uint256 _days = getDays(block.timestamp, create_time);
-        if (accountTotals > 0) {
-            uint256 _earnAmount = stakeEarnAmount[_account];
-            uint256 _realEarnAmount = (_earnAmount * earnRate) / 100;
-            stakeEarnAmount[_account] = _realEarnAmount;
-            day_total_usdt[_days] += (_earnAmount - _realEarnAmount);
-        }
     }
 }
