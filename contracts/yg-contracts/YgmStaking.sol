@@ -193,7 +193,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
             uint256 _totalEarn = 0;
 
             for (uint256 i = _start; i < _end; i++) {
-                if (0 < day_total_stake[i]) {
+                if (day_total_stake[i] > 0) {
                     uint256 _earn = (day_total_usdt[i] *
                         account_staking_amount) / day_total_stake[i];
                     _totalEarn += _earn;
