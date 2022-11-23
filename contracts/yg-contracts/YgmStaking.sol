@@ -33,23 +33,25 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         bool state;
     }
 
+    // Total number of all staked YGM
+    uint32 public stakeTotals;
+    // The number of accounts in staking
+    uint32 public accountTotals;
+
     // todo YGM token
-    IERC721 immutable ygm;
+    IERC721 ygm;
+    // Create_time
+    uint64 public create_time;
+
     // todo usdt token
-    IERC20 immutable usdt;
+    IERC20 usdt;
+    // Time period
+    uint64 public day_timestamp = 1 days;
 
     // Payment account
     address public paymentAccount;
     // Rate
     uint64 public earnRate = 70;
-
-    // Create_time
-    uint64 public create_time;
-    uint64 public day_timestamp = 1 days;
-    // Total number of all staked YGM
-    uint64 public stakeTotals;
-    // The number of accounts in staking
-    uint64 public accountTotals;
 
     // Staking Data
     mapping(uint256 => StakingData) public stakingDatas;
@@ -69,9 +71,66 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     // The income of a user's stake
     mapping(address => uint256) public stakeEarnAmount;
 
-    constructor(address ygm_address, address usdt_address) {
-        ygm = IERC721(ygm_address);
-        usdt = IERC20(usdt_address);
+    // Set the amount of usdt allocated on a certain day (onlyOwner)
+    function setDayAmount(uint _usdtAmount) external onlyOwner returns (bool) {
+        uint _days = getDays(create_time, block.timestamp);
+        day_total_usdt[_days] += _usdtAmount;
+        return true;
+    }
+
+    // Set create_time and day_timestamp (onlyOwner)
+    function start(uint _create_time, uint _day_timestamp)
+        external
+        onlyOwner
+        returns (bool)
+    {
+        require(_create_time > 0 && _day_timestamp > 0, "set time error");
+        create_time = uint64(_create_time);
+        day_timestamp = uint64(_day_timestamp);
+        return true;
+    }
+
+    // Set eran rate (onlyOwner)
+    function setRate(uint _rate) external onlyOwner returns (bool) {
+        require(_rate <= 100, "set rate error");
+        earnRate = uint64(_rate);
+        return true;
+    }
+
+    // Set YGM contract address (onlyOwner)
+    function setYgm(address _ygmAddress) external onlyOwner returns (bool) {
+        ygm = IERC721(_ygmAddress);
+        return true;
+    }
+
+    // Set usdt contract address (onlyOwner)
+    function setUsdt(address _usdtAddress) external onlyOwner returns (bool) {
+        usdt = IERC20(_usdtAddress);
+        return true;
+    }
+
+    // Set payment account address (onlyOwner)
+    function setPayAccount(address _payAccount)
+        external
+        onlyOwner
+        returns (bool)
+    {
+        paymentAccount = _payAccount;
+        return true;
+    }
+
+    // Withdraw YGm (onlyOwner)
+    function withdrawYgm(address _account, uint _tokenId)
+        external
+        onlyOwner
+        returns (bool)
+    {
+        StakingData memory _data = stakingDatas[_tokenId];
+        require(_data.state == true, "tokenId isn't staked");
+        require(_data.account == _account, "tokenId doesn't belong to account");
+        ygm.safeTransferFrom(address(this), _account, _tokenId);
+        delete stakingDatas[_tokenId];
+        return true;
     }
 
     // Get the total amount of staking on a certain day
@@ -161,7 +220,9 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
         address ygm_address,
         address usdt_address,
         address payment
-    ) YgmStakingBase(ygm_address, usdt_address) {
+    ) {
+        ygm = IERC721(ygm_address);
+        usdt = IERC20(usdt_address);
         paymentAccount = payment;
     }
 
@@ -192,9 +253,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
             ygm.safeTransferFrom(msg.sender, address(this), _tokenId);
 
             StakingData storage _data = stakingDatas[_tokenId];
-
             _data.account = _sender;
-
             _data.state = true;
 
             // Add _tokenId in stakingTokenIds[account] list
@@ -204,7 +263,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
         }
 
         // Add stake Totals
-        stakeTotals += uint64(_number);
+        stakeTotals += uint32(_number);
         _syncDayTotalStake();
         return true;
     }
@@ -223,7 +282,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
         for (uint256 i = 0; i < _number; i++) {
             uint256 _tokenId = _tokenIds[i];
             require(_tokenId > 0, "invalid tokenId");
-            StakingData storage _data = stakingDatas[_tokenId];
+            StakingData memory _data = stakingDatas[_tokenId];
             require(_data.account == _sender, "invalid account");
             require(_data.state, "invalid stake state");
 
@@ -247,7 +306,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
                 accountTotals -= 1;
             }
             // Reset data
-            _data.state = false;
+            delete stakingDatas[_tokenId];
 
             emit UnStake(_sender, _tokenId, block.timestamp);
         }
@@ -256,7 +315,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
             emit WithdrawEarn(_sender, amount, block.timestamp);
         }
         // Sub stake Totals
-        stakeTotals -= uint64(_number);
+        stakeTotals -= uint32(_number);
         _syncDayTotalStake();
         return true;
     }
