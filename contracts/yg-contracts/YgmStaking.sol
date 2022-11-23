@@ -79,6 +79,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     {
         uint256 _days = getDays(create_time, block.timestamp);
         day_total_usdt[_days] += _usdtAmount;
+        _syncDayTotalStake();
         return true;
     }
 
