@@ -45,7 +45,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
 
     // todo usdt token
     IERC20 usdt;
-    // Time period
+    // todo Time period
     uint64 public day_timestamp = 1 days;
 
     // Payment account
