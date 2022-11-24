@@ -15,7 +15,7 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
     const ygm = await ethers.getContract("YGMint");
     ygmAddress = ygm.address;
   }
-  let createTime = Math.floor(new Date().getTime() / 1000);
+  let createTime = 1669273800;
   let perPeriod = 300;
   const args = [ygmAddress, usdtAddress, deployer, createTime, perPeriod];
 

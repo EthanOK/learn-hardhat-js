@@ -184,11 +184,15 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     }
 
     function getReward(address _sender) public view returns (uint256) {
-        uint256 staking_amount = stakingTokenIds[_sender].length;
-        if (stakeTime[_sender] > 0 && staking_amount > 0) {
+        if (stakeTime[_sender] > 0) {
+            uint256 staking_amount = stakingTokenIds[_sender].length;
+            if (staking_amount == 0) {
+                return 0;
+            }
             uint256 _start = getDays(create_time, stakeTime[_sender]);
             uint256 _end = getDays(create_time, block.timestamp);
             uint256 _totalEarn = 0;
+
             for (uint256 i = _start; i < _end; i++) {
                 if (day_total_stake[i] > 0) {
                     uint256 _earn = (day_total_usdt[i] * staking_amount) /
@@ -211,11 +215,10 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         // Calculate the withdrawal ratio
         uint256 _realEarnAmount;
         uint256 _days = getDays(create_time, block.timestamp);
-        if (accountTotals > 0) {
-            uint256 _earnAmount = stakeEarnAmount[_account];
-            _realEarnAmount = (_earnAmount * earnRate) / 100;
-            day_total_usdt[_days] += (_earnAmount - _realEarnAmount);
-        }
+
+        uint256 _earnAmount = stakeEarnAmount[_account];
+        _realEarnAmount = (_earnAmount * earnRate) / 100;
+        day_total_usdt[_days] += (_earnAmount - _realEarnAmount);
 
         require(
             _realEarnAmount > 0,
