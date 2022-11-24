@@ -184,22 +184,18 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     }
 
     function getReward(address _sender) public view returns (uint256) {
-        if (0 < stakeTime[_sender]) {
-            uint256 account_staking_amount = stakingTokenIds[_sender].length;
-            require(account_staking_amount > 0, "Account doesn't stake");
+        uint256 staking_amount = stakingTokenIds[_sender].length;
+        if (stakeTime[_sender] > 0 && staking_amount > 0) {
             uint256 _start = getDays(create_time, stakeTime[_sender]);
             uint256 _end = getDays(create_time, block.timestamp);
-
             uint256 _totalEarn = 0;
-
             for (uint256 i = _start; i < _end; i++) {
                 if (day_total_stake[i] > 0) {
-                    uint256 _earn = (day_total_usdt[i] *
-                        account_staking_amount) / day_total_stake[i];
+                    uint256 _earn = (day_total_usdt[i] * staking_amount) /
+                        day_total_stake[i];
                     _totalEarn += _earn;
                 }
             }
-
             return _totalEarn + stakeEarnAmount[_sender];
         } else {
             return 0;
@@ -223,10 +219,11 @@ abstract contract YgmStakingBase is Ownable, Pausable {
 
         require(
             _realEarnAmount > 0,
-            "Insufficient balance available for withdrawal"
+            "Insufficient balance available for withdraw"
         );
         stakeEarnAmount[_account] = 0;
         usdt.transferFrom(paymentAccount, _account, _realEarnAmount);
+
         return _realEarnAmount;
     }
 
@@ -340,6 +337,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
 
             emit UnStake(_sender, _tokenId, block.timestamp);
         }
+        // Withdraw Earn
         if (stakeEarnAmount[_sender] > 0) {
             uint256 amount = _withdrawEarn(_sender);
             emit WithdrawEarn(_sender, amount, block.timestamp);
@@ -363,6 +361,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
         require(stakeEarnAmount[sender] > 0, "Insufficient balance");
         uint256 amount = _withdrawEarn(sender);
         emit WithdrawEarn(sender, amount, block.timestamp);
+        _syncDayTotalStake();
         return true;
     }
 }
