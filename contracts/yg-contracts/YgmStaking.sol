@@ -142,7 +142,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
                 stakingTokenIds[_account][j] = stakingTokenIds[_account][
                     _len - 1
                 ];
-                stakingTokenIds[msg.sender].pop();
+                stakingTokenIds[_account].pop();
                 break;
             }
         }
@@ -326,7 +326,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
                     stakingTokenIds[_sender][j] = stakingTokenIds[_sender][
                         _len - 1
                     ];
-                    stakingTokenIds[msg.sender].pop();
+                    stakingTokenIds[_sender].pop();
                     break;
                 }
             }
