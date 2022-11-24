@@ -245,15 +245,15 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
     constructor(
         address ygmAddress,
         address usdtAddress,
-        address payment,
-        uint256 createTime,
-        uint256 perPeriod
+        address _paymentAccount,
+        uint256 _create_time,
+        uint256 _perPeriod
     ) {
         ygm = IERC721(ygmAddress);
         usdt = IERC20(usdtAddress);
-        paymentAccount = payment;
-        create_time = uint64(createTime);
-        perPeriod = uint64(perPeriod);
+        paymentAccount = _paymentAccount;
+        create_time = uint64(_create_time);
+        perPeriod = uint64(_perPeriod);
     }
 
     // Batch stake YGM
