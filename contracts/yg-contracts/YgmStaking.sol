@@ -60,15 +60,15 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     mapping(address => uint256[]) stakingTokenIds;
 
     // The amount of usdt shared by all users on a certain day
-    mapping(uint256 => uint256) public day_total_usdt;
+    mapping(uint256 => uint256) day_total_usdt;
 
     // The total amount of ygm staked on a certain day
-    mapping(uint256 => uint256) public day_total_stake;
+    mapping(uint256 => uint256) day_total_stake;
 
     // The time a user staked
     mapping(address => uint256) public stakeTime;
 
-    // The income of a user's stake
+    // The income obtained by the user's previous stake
     mapping(address => uint256) public stakeEarnAmount;
 
     // Set the amount of usdt allocated on a certain day (onlyOwner)
@@ -128,7 +128,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         require(_data.state == true, "tokenId isn't staked");
         require(_data.account == _account, "tokenId doesn't belong to account");
         ygm.safeTransferFrom(address(this), _account, _tokenId);
-        // Update _account;s stakeEarn Amount
+        // Update _account's stake earn Amount
         stakeEarnAmount[_account] = getReward(_account);
 
         // Delete tokenId in stakingTokenIds
@@ -148,12 +148,22 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         return day_total_stake[_day];
     }
 
+    // Get the total amount of USDT on a certain day
+    function getDayTotalUsdt(uint256 _day) external view returns (uint256) {
+        return day_total_usdt[_day];
+    }
+
     // Get account staking tokenId list
     function getStakingTokenIds(
         address _account
     ) external view returns (uint256[] memory) {
         uint256[] memory _tokenIds = stakingTokenIds[_account];
         return _tokenIds;
+    }
+
+    function getCurrentDay() external view returns (uint256) {
+        uint256 _day = (block.timestamp - create_time) / perPeriod;
+        return _day;
     }
 
     function getDays(
