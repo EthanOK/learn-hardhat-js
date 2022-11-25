@@ -72,11 +72,9 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     mapping(address => uint256) public stakeEarnAmount;
 
     // Set the amount of usdt allocated on a certain day (onlyOwner)
-    function setDayAmount(uint256 _usdtAmount)
-        external
-        onlyOwner
-        returns (bool)
-    {
+    function setDayAmount(
+        uint256 _usdtAmount
+    ) external onlyOwner returns (bool) {
         uint256 _days = getDays(create_time, block.timestamp);
         day_total_usdt[_days] += _usdtAmount;
         _syncDayTotalStake();
@@ -84,11 +82,10 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     }
 
     // Set create time and per period time (onlyOwner)
-    function start(uint256 _create_time, uint256 _period)
-        public
-        onlyOwner
-        returns (bool)
-    {
+    function start(
+        uint256 _create_time,
+        uint256 _period
+    ) public onlyOwner returns (bool) {
         require(_create_time > 0 && _period > 0, "set time error");
         create_time = uint64(_create_time);
         perPeriod = uint64(_period);
@@ -115,44 +112,31 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     }
 
     // Set payment account address (onlyOwner)
-    function setPayAccount(address _payAccount)
-        external
-        onlyOwner
-        returns (bool)
-    {
+    function setPayAccount(
+        address _payAccount
+    ) external onlyOwner returns (bool) {
         paymentAccount = _payAccount;
         return true;
     }
 
     // Withdraw YGM (onlyOwner) No profit, only withdraw YGM
-    function withdrawYgm(address _account, uint256 _tokenId)
-        external
-        onlyOwner
-        returns (bool)
-    {
+    function withdrawYgm(
+        address _account,
+        uint256 _tokenId
+    ) external onlyOwner returns (bool) {
         StakingData memory _data = stakingDatas[_tokenId];
         require(_data.state == true, "tokenId isn't staked");
         require(_data.account == _account, "tokenId doesn't belong to account");
         ygm.safeTransferFrom(address(this), _account, _tokenId);
+        // Update _account;s stakeEarn Amount
+        stakeEarnAmount[_account] = getReward(_account);
 
         // Delete tokenId in stakingTokenIds
-        uint256 _len = stakingTokenIds[_account].length;
-        for (uint256 j = 0; j < _len; j++) {
-            if (stakingTokenIds[_account][j] == _tokenId) {
-                stakingTokenIds[_account][j] = stakingTokenIds[_account][
-                    _len - 1
-                ];
-                stakingTokenIds[_account].pop();
-                break;
-            }
-        }
-        // Sub account total
-        if (stakingTokenIds[_account].length == 0) {
-            accountTotals -= 1;
-        }
+        _deleteTokenIdInList(_account, _tokenId);
 
         // Delete tokenId in stakingDatas
         delete stakingDatas[_tokenId];
+
         // Sub stake Totals
         stakeTotals -= 1;
         _syncDayTotalStake();
@@ -165,20 +149,17 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     }
 
     // Get account staking tokenId list
-    function getStakingTokenIds(address _account)
-        external
-        view
-        returns (uint256[] memory)
-    {
+    function getStakingTokenIds(
+        address _account
+    ) external view returns (uint256[] memory) {
         uint256[] memory _tokenIds = stakingTokenIds[_account];
         return _tokenIds;
     }
 
-    function getDays(uint256 _startTime, uint256 _endtime)
-        public
-        view
-        returns (uint256)
-    {
+    function getDays(
+        uint256 _startTime,
+        uint256 _endtime
+    ) public view returns (uint256) {
         uint256 _days = (_endtime - _startTime) / perPeriod;
         return _days;
     }
@@ -187,7 +168,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         if (stakeTime[_sender] > 0) {
             uint256 staking_amount = stakingTokenIds[_sender].length;
             if (staking_amount == 0) {
-                return 0;
+                return stakeEarnAmount[_sender];
             }
             uint256 _start = getDays(create_time, stakeTime[_sender]);
             uint256 _end = getDays(create_time, block.timestamp);
@@ -230,6 +211,24 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         return _realEarnAmount;
     }
 
+    function _deleteTokenIdInList(address _account, uint256 _tokenId) internal {
+        // Delete tokenId in stakingTokenIds
+        uint256 _len = stakingTokenIds[_account].length;
+        for (uint256 j = 0; j < _len; j++) {
+            if (stakingTokenIds[_account][j] == _tokenId) {
+                stakingTokenIds[_account][j] = stakingTokenIds[_account][
+                    _len - 1
+                ];
+                stakingTokenIds[_account].pop();
+                break;
+            }
+        }
+        // Sub account total
+        if (stakingTokenIds[_account].length == 0) {
+            accountTotals -= 1;
+        }
+    }
+
     // Update stake earn (modifier)
     modifier updateEarn() {
         address _sender = _msgSender();
@@ -257,13 +256,9 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
     }
 
     // Batch stake YGM
-    function stake(uint256[] calldata _tokenIds)
-        external
-        whenNotPaused
-        nonReentrant
-        updateEarn
-        returns (bool)
-    {
+    function stake(
+        uint256[] calldata _tokenIds
+    ) external whenNotPaused nonReentrant updateEarn returns (bool) {
         address _sender = _msgSender();
         uint256 _number = _tokenIds.length;
         require(_number > 0, "invalid tokenIds");
@@ -299,13 +294,9 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
     }
 
     // Batch stake YGM
-    function unStake(uint256[] calldata _tokenIds)
-        external
-        whenNotPaused
-        nonReentrant
-        updateEarn
-        returns (bool)
-    {
+    function unStake(
+        uint256[] calldata _tokenIds
+    ) external whenNotPaused nonReentrant updateEarn returns (bool) {
         address _sender = _msgSender();
         uint256 _number = _tokenIds.length;
         require(_number > 0, "invalid tokenIds");
@@ -319,23 +310,10 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
             // SafeTransferFrom
             ygm.safeTransferFrom(address(this), _data.account, _tokenId);
 
-            // Delete tokenId
-            uint256 _len = stakingTokenIds[_sender].length;
-            for (uint256 j = 0; j < _len; j++) {
-                if (stakingTokenIds[_sender][j] == _tokenId) {
-                    stakingTokenIds[_sender][j] = stakingTokenIds[_sender][
-                        _len - 1
-                    ];
-                    stakingTokenIds[_sender].pop();
-                    break;
-                }
-            }
+            // Delete tokenId in stakingTokenIds
+            _deleteTokenIdInList(_sender, _tokenId);
 
-            // Sub account total
-            if (stakingTokenIds[_sender].length == 0) {
-                accountTotals -= 1;
-            }
-            // Reset data
+            // Reset staking data
             delete stakingDatas[_tokenId];
 
             emit UnStake(_sender, _tokenId, block.timestamp);

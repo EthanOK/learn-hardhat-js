@@ -39,13 +39,9 @@ abstract contract ERC721URIStorage is ERC721Enumerable, Ownable {
     /**
      * @dev See {IERC721Metadata-tokenURI}.
      */
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {
+    function tokenURI(
+        uint256 tokenId
+    ) public view virtual override returns (string memory) {
         require(
             _exists(tokenId),
             "ERC721URIStorage: URI query for nonexistent token"
@@ -65,10 +61,10 @@ abstract contract ERC721URIStorage is ERC721Enumerable, Ownable {
      *
      * - `tokenId` must exist.
      */
-    function _setTokenURI(uint256 tokenId, string memory _tokenURI)
-        internal
-        virtual
-    {
+    function _setTokenURI(
+        uint256 tokenId,
+        string memory _tokenURI
+    ) internal virtual {
         require(
             _exists(tokenId),
             "ERC721URIStorage: URI set of nonexistent token"
@@ -120,9 +116,9 @@ contract YGMint is ERC721URIStorage {
     uint256 mintMax = 12;
     uint256 mintFee = 10;
 
-    uint256 mintEveryAmount = 12 * 10**15;
-    uint256 firstLeave = 1 * 10**15;
-    uint256 secondtLeave = 5 * 10**14;
+    uint256 mintEveryAmount = 12 * 10 ** 15;
+    uint256 firstLeave = 1 * 10 ** 15;
+    uint256 secondtLeave = 5 * 10 ** 14;
 
     mapping(address => bool) public isMint;
 
@@ -155,11 +151,10 @@ contract YGMint is ERC721URIStorage {
         }
     }
 
-    function safeMint(address payable _recommender, uint256 mintCount)
-        external
-        payable
-        checkRecommender(_recommender)
-    {
+    function safeMint(
+        address payable _recommender,
+        uint256 mintCount
+    ) external payable checkRecommender(_recommender) {
         require(isStart, "Not started");
 
         require(
