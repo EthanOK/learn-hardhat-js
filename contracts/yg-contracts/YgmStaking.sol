@@ -161,8 +161,16 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         return _tokenIds;
     }
 
+    // Get account staking tokenId amount
+    function getStakingAmount(
+        address _account
+    ) external view returns (uint256) {
+        return stakingTokenIds[_account].length;
+    }
+
+    // Get the index of the current day
     function getCurrentDay() external view returns (uint256) {
-        uint256 _day = (block.timestamp - create_time) / perPeriod;
+        uint256 _day = getDays(create_time, block.timestamp);
         return _day;
     }
 
@@ -170,6 +178,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         uint256 _startTime,
         uint256 _endtime
     ) public view returns (uint256) {
+        require(_startTime < _endtime, "Not yet start time");
         uint256 _days = (_endtime - _startTime) / perPeriod;
         return _days;
     }
@@ -206,18 +215,13 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         // Calculate the withdrawal ratio
         uint256 _realEarnAmount;
         uint256 _days = getDays(create_time, block.timestamp);
-
         uint256 _earnAmount = stakeEarnAmount[_account];
         _realEarnAmount = (_earnAmount * earnRate) / 100;
         day_total_usdt[_days] += (_earnAmount - _realEarnAmount);
-
-        require(
-            _realEarnAmount > 0,
-            "Insufficient balance available for withdraw"
-        );
+        require(_realEarnAmount > 0, "Insufficient withdrawal balance");
         stakeEarnAmount[_account] = 0;
+        // TransferFrom USDT
         usdt.transferFrom(paymentAccount, _account, _realEarnAmount);
-
         return _realEarnAmount;
     }
 
@@ -286,7 +290,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
         for (uint256 i = 0; i < _number; i++) {
             uint256 _tokenId = _tokenIds[i];
             ygm.safeTransferFrom(msg.sender, address(this), _tokenId);
-
+            // Add  staking Datas
             StakingData storage _data = stakingDatas[_tokenId];
             _data.account = _sender;
             _data.state = true;
