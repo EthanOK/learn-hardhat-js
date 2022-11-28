@@ -51,7 +51,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     // Payment account
     address public paymentAccount;
     // Rate
-    uint64 public earnRate = 70;
+    uint64 public earnRate = 50;
 
     // Staking Data
     mapping(uint256 => StakingData) public stakingDatas;
