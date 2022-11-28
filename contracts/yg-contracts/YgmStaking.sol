@@ -219,7 +219,8 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         _realEarnAmount = (_earnAmount * earnRate) / 100;
         day_total_usdt[_days] += (_earnAmount - _realEarnAmount);
         require(_realEarnAmount > 0, "Insufficient withdrawal balance");
-        stakeEarnAmount[_account] = 0;
+        // Reset stakeEarnAmount[account]
+        delete stakeEarnAmount[_account];
         // TransferFrom USDT
         usdt.transferFrom(paymentAccount, _account, _realEarnAmount);
         return _realEarnAmount;
