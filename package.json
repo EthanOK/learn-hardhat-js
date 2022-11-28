@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npx hardhat test",
     "test nftutils_test_erc721": "npx hardhat test test/nftutils_test_erc721.js",
-    "test nftutils_test_erc20.js": "npx hardhat test test/nftutils_test_erc20.js",
+    "test nftutils_test_erc20": "npx hardhat test test/nftutils_test_erc20.js",
     "compile": "npx hardhat compile",
     "size-contracts": "npx hardhat size-contracts",
     "node": "npx hardhat node",
