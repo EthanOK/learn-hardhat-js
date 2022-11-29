@@ -291,7 +291,7 @@ contract YgmStaking is ReentrancyGuard, ERC721Holder, YgmStakingBase {
         for (uint256 i = 0; i < _number; i++) {
             uint256 _tokenId = _tokenIds[i];
             ygm.safeTransferFrom(msg.sender, address(this), _tokenId);
-            // Add  staking Datas
+            // Add staking Datas
             StakingData storage _data = stakingDatas[_tokenId];
             _data.account = _sender;
             _data.state = true;
