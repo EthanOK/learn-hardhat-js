@@ -39,12 +39,12 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     uint32 public accountTotals;
 
     // todo YGM token
-    IERC721 ygm;
+    IERC721 public ygm;
     // Create_time
     uint64 public create_time;
 
     // todo usdt token
-    IERC20 usdt;
+    IERC20 public usdt;
     // todo Time period
     uint64 public perPeriod;
 
@@ -54,7 +54,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     uint64 public earnRate = 50;
 
     // Staking Data
-    mapping(uint256 => StakingData) public stakingDatas;
+    mapping(uint256 => StakingData) stakingDatas;
 
     // List of account staking tokenId
     mapping(address => uint256[]) stakingTokenIds;
@@ -66,10 +66,10 @@ abstract contract YgmStakingBase is Ownable, Pausable {
     mapping(uint256 => uint256) day_total_stake;
 
     // The time a user staked
-    mapping(address => uint256) public stakeTime;
+    mapping(address => uint256) stakeTime;
 
     // The income obtained by the user's previous stake
-    mapping(address => uint256) public stakeEarnAmount;
+    mapping(address => uint256) stakeEarnAmount;
 
     // Set the amount of usdt allocated on a certain day (onlyOwner)
     function setDayAmount(
@@ -86,6 +86,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         uint256 _create_time,
         uint256 _period
     ) public onlyOwner returns (bool) {
+        require(block.timestamp < create_time, "start time passed");
         require(_create_time > 0 && _period > 0, "set time error");
         create_time = uint64(_create_time);
         perPeriod = uint64(_period);
@@ -168,6 +169,13 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         return stakingTokenIds[_account].length;
     }
 
+    // Get tokenId's Staking Data
+    function getStakingData(
+        uint256 _tokenId
+    ) external view returns (address, bool) {
+        return (stakingDatas[_tokenId].account, stakingDatas[_tokenId].state);
+    }
+
     // Get the index of the current day
     function getCurrentDay() external view returns (uint256) {
         uint256 _day = getDays(create_time, block.timestamp);
@@ -183,13 +191,13 @@ abstract contract YgmStakingBase is Ownable, Pausable {
         return _days;
     }
 
-    function getReward(address _sender) public view returns (uint256) {
-        if (stakeTime[_sender] > 0) {
-            uint256 staking_amount = stakingTokenIds[_sender].length;
+    function getReward(address _account) public view returns (uint256) {
+        if (stakeTime[_account] > 0) {
+            uint256 staking_amount = stakingTokenIds[_account].length;
             if (staking_amount == 0) {
-                return stakeEarnAmount[_sender];
+                return stakeEarnAmount[_account];
             }
-            uint256 _start = getDays(create_time, stakeTime[_sender]);
+            uint256 _start = getDays(create_time, stakeTime[_account]);
             uint256 _end = getDays(create_time, block.timestamp);
             uint256 _totalEarn = 0;
 
@@ -200,7 +208,7 @@ abstract contract YgmStakingBase is Ownable, Pausable {
                     _totalEarn += _earn;
                 }
             }
-            return _totalEarn + stakeEarnAmount[_sender];
+            return _totalEarn + stakeEarnAmount[_account];
         } else {
             return 0;
         }
