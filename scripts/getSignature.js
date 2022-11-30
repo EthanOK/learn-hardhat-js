@@ -35,10 +35,10 @@ async function getSignature() {
   });
 
   // 签名文本消息
-  let str = "Hello World!";
+  let str = "0x3ea2f1d0abf3fc66cf29eebb70cbd4e7fe762ef8a09bcc06c8edf641230afec0";
   let signPromise = signer.signMessage(str);
   signPromise.then((sign) => {
-    console.log("sign: " + sign);
+    console.log("sign string: " + sign);
     let adr = ethers.utils.verifyMessage(str, sign);
     console.log("signer address: " + adr);
   });
@@ -51,7 +51,7 @@ async function getSignature() {
 
   let signPromise_ = signer.signMessage(binaryData_);
   signPromise_.then((sign) => {
-    console.log("sign: " + sign);
+    console.log("sign hex: " + sign);
     let adr = ethers.utils.verifyMessage(binaryData_, sign);
     console.log("signer address: " + adr);
   });
