@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
+require("@ethereumjs/util");
 require("@nomiclabs/hardhat-etherscan");
 require("hardhat-gas-reporter");
 require("hardhat-contract-sizer");

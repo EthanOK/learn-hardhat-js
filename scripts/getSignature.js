@@ -8,7 +8,7 @@ async function getSignature() {
   // keccak256(abi.encodePacked(a, b)) == utils.solidityKeccak256(types, values)
   let tokenId = 1;
   let account = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4";
-  let message = ethers.utils.solidityKeccak256(
+  let message = await ethers.utils.solidityKeccak256(
     ["uint256", "address"],
     [tokenId, account]
   );
@@ -17,13 +17,43 @@ async function getSignature() {
   console.log("utils.solidityKeccak256(a, b):", message);
   console.log("keccak256(abi.encodePacked(a, b)):", message);
   // console.log(ethers.utils.arrayify(message));
-  let binaryData = ethers.utils.arrayify(message);
-  const signature = signer.signMessage(binaryData);
-  signature.then((sign) => {
-    console.log("signature:", sign);
+  let binaryData = await ethers.utils.arrayify(message);
+  // Promise<string> 执行 signMessage 函数 自动为数据加了前缀
+  const signaturedata = signer.signMessage(binaryData);
+  // console.log(signature);
+  signaturedata.then((sign) => {
+    console.log("sign: " + sign);
+    // let expanded = ethers.utils.splitSignature(sign);
+    // console.log(expanded);
+    let adr = ethers.utils.verifyMessage(binaryData, sign);
+    console.log("signer address: " + adr);
+  });
+
+  // 签名文本消息
+  let str = "Hello World!";
+  let signPromise = signer.signMessage(str);
+  signPromise.then((sign) => {
+    console.log("sign: " + sign);
+    let adr = ethers.utils.verifyMessage(str, sign);
+    console.log("signer address: " + adr);
+  });
+
+  // 签名二进制信息
+  // The 66 character hex string MUST be converted to a 32-byte array first!
+  let hash =
+    "0x3ea2f1d0abf3fc66cf29eebb70cbd4e7fe762ef8a09bcc06c8edf641230afec0";
+  let binaryData_ = ethers.utils.arrayify(hash);
+
+  let signPromise_ = signer.signMessage(binaryData_);
+  signPromise_.then((sign) => {
+    console.log("sign: " + sign);
+    let adr = ethers.utils.verifyMessage(binaryData_, sign);
+    console.log("signer address: " + adr);
   });
 }
+
 getSignature();
+
 // console.log(signature);
 
 // https://goerli.etherscan.io/address/0x6e7f9fccadfd34689a9542534c25475b5ffb7282#code
