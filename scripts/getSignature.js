@@ -2,6 +2,11 @@ const { ethers } = require("hardhat");
 async function getSignature() {
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY);
   const [owner] = await ethers.getSigners();
+
+  // https://learnblockchain.cn/article/2701
+  // personal_sign 后来加入来解决这个问题。
+  //该方法在任何签名数据前加上"\x19Ethereum Signed Message:\n"
+
   // 签名二进制信息
   // https://learnblockchain.cn/docs/ethers.js/api-wallet.html#id14
   // https://learnblockchain.cn/docs/ethers.js/api-utils.html#solidity
