@@ -36,6 +36,7 @@
     "@openzeppelin/contracts-upgradeable": "^4.8.0",
     "dotenv": "^16.0.3",
     "mysql": "^2.18.1",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "solmate": "^6.6.1"
   }
 }
