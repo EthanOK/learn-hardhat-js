@@ -238,6 +238,7 @@ async function main() {
   });
 
   //   // 过滤事件
+  //   let contract = new ethers.Contract(addressC, abi, provider);
   //   let filteraddress = "0x53188E798f2657576c9de8905478F46ac2f24b67";
   //   let filter = contract.filters.Transfer(null, filteraddress, null);
   //   console.log("Transfer(null, %s, null)", filteraddress);
