@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 pragma solidity >=0.7.0 <0.9.0;
 
 interface interStorage {
@@ -45,7 +46,7 @@ contract AssemblyStorage {
         //return number;
     }
 
-    function readDataNotRerurn() public view {
+    function readDataNotReturn() public view {
         assembly {
             let num := sload(number.slot)
             let point := mload(0x40)
